@@ -31,9 +31,11 @@ from werkzeug.utils import secure_filename
 from config import Config
 from events import socketio, connected_users
 from helpers import (
+    allowed_file,
     array_to_str,
     create_notification_link,
     create_notification_message,
+    delete_file_from_s3,
     format_message_time,
     format_time_ago,
     login_required,
@@ -42,6 +44,7 @@ from helpers import (
     process_hashtags,
     process_text,
     upload,
+    upload_file_to_s3,
     validate_image,
 )
 from models import (
@@ -132,17 +135,22 @@ def inject_user():
 
 @app.errorhandler(401)
 def unauthorized(error):
-    return render_template("not-401.html")
+    return render_template("errors/401.html"), 401
 
 
 @app.errorhandler(404)
 def not_found_error(error):
-    return render_template("not-found.html")
+    return render_template("errors/404.html"), 404
 
 
 @app.errorhandler(413)
-def too_large(e):
-    return "File is too large", 413
+def too_large(error):
+    return render_template("errors/413.html"), 413
+
+
+@app.errorhandler(422)
+def unprocessable(error):
+    return render_template("errors/422.html"), 422
 
 
 @app.errorhandler(500)
@@ -351,7 +359,7 @@ def complete_profile():
             flash("Please fill the required fields!", "error")
             return redirect("/register/complete")
 
-        image_path = upload(image)
+        image_path = upload_file_to_s3(image)
 
         # Update user
         user.image = image_path
@@ -405,6 +413,9 @@ def user_profile(username):
     return render_template("profiles/profile.html", user=user)
 
 
+""" SETTINGS """
+
+
 @app.route("/settings")
 def settings():
     user = db.get_or_404(User, session["user_id"])
@@ -423,9 +434,6 @@ def user_delete(id):
     db.session.commit()
     session.clear()
     return redirect(url_for("index"))
-
-
-""" SETTINGS """
 
 
 @app.route("/settings/general", methods=["POST"])
@@ -454,8 +462,15 @@ def general_settings():
     if email and email != current_user.email:
         current_user.email = email
 
-    image_path = upload(image)
-    current_user.image = image_path
+    if image.filename:
+        if not allowed_file(image.filename):
+            return abort(422)
+        image_path = upload_file_to_s3(image)
+        current_user.image = image_path
+
+    if current_user.image and not image.filename:
+        delete_file_from_s3(current_user.image)
+        current_user.image = None
 
     # Save changes
     try:

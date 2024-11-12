@@ -16,6 +16,9 @@ https://medium.com/@brodiea19/flask-sqlalchemy-how-to-upload-photos-and-render-t
 [Uploaded image's preview](https://dev.to/thecoollearner/how-to-show-image-upload-preview-44g5)
 [Programmatically change the src of an image](https://stackoverflow.com/questions/11722400/programmatically-change-the-src-of-an-img-tag)
 
+<!-- Upload Files to AWS S3 -->
+https://gist.github.com/leongjinqwen/9d9a2d58bf2fb923658820559a88a5ec
+
 <!-- Creating & Importing Components -->
 https://jinja.palletsprojects.com/en/3.1.x/templates/#macros
 

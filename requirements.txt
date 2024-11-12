@@ -7,3 +7,4 @@ Flask-Mail
 pytz
 requests
 python-dotenv
+boto3
