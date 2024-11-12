@@ -87,36 +87,6 @@ def validate_image(stream):
     return "." + (format if format != "jpeg" else "jpg")
 
 
-# Upload an image
-def upload(image):
-    filename = secure_filename(image.filename)
-
-    # check if file exists
-    if filename != "":
-        file_ext = os.path.splitext(filename)[1]
-        if file_ext not in current_app.config[
-            "UPLOAD_EXTENSIONS"
-        ] or file_ext != validate_image(image.stream):
-            flash("Please only upload an allowed image format.", "error")
-            return redirect("/file")
-        image.save(
-            os.path.join("static/avatars", str(session.get("user_id")) + file_ext)
-        )
-
-        return f"/{current_app.config['UPLOAD_AVATAR_PATH']}/{str(session.get('user_id')) + file_ext}"
-    else:
-        for ext in current_app.config["UPLOAD_EXTENSIONS"]:
-            existing_file = f"{current_app.config['UPLOAD_AVATAR_PATH']}/{session.get('user_id')}{ext}"
-            if os.path.exists(existing_file):
-                os.remove(existing_file)
-                flash("Your profile picture was deleted.", "success")
-        return None
-
-
-# TODO: Remove images on user delete
-# def remove_image():
-
-
 # By ChatGPT
 def format_time_ago(dt: datetime):
     now = datetime.utcnow()

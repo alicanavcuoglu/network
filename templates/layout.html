@@ -67,6 +67,7 @@
 						<a class="navbar-brand" href="/">Network50</a>
 
 						{% if g.user %}
+						{% if g.user.is_completed %}
 						<!-- Desktop Navigation -->
 						<div
 							class="collapse navbar-collapse d-none d-md-block me-auto"
@@ -136,9 +137,10 @@
 									<!-- Notifications content remains the same -->
 								</ul>
 							</div>
+							{% endif %}
 
 							<!-- Profile Dropdown -->
-							<div class="dropdown">
+							<div class="dropdown ms-auto">
 								<button
 									class="nav-link dropdown-toggle d-flex align-items-center gap-1"
 									id="navbarDropdownMenuLink"
@@ -153,6 +155,7 @@
 								<ul
 									class="dropdown-menu dropdown-menu-end"
 									aria-labelledby="navbarDropdownMenuLink">
+									{% if g.user.is_completed %}
 									<li>
 										<a
 											class="dropdown-item"
@@ -174,6 +177,15 @@
 											>Settings</a
 										>
 									</li>
+									{% else %}
+									<li class="pb-1">
+										<a
+											class="dropdown-item"
+											href="/register/complete"
+											>Complete your profile</a
+										>
+									</li>
+									{% endif %}
 									<li class="border-top pt-1">
 										<a class="dropdown-item" href="/logout"
 											>Log Out</a
@@ -182,6 +194,7 @@
 								</ul>
 							</div>
 
+							{% if g.user.is_completed %}
 							<!-- Hamburger Menu - Only visible on mobile -->
 							<button
 								class="navbar-toggler d-md-none ms-2"
@@ -193,6 +206,7 @@
 								aria-label="Toggle navigation">
 								<span class="navbar-toggler-icon"></span>
 							</button>
+							{% endif %}
 						</div>
 						{% else %}
 						<div class="ms-auto">

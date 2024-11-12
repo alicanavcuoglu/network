@@ -15,7 +15,7 @@
 					class="d-flex flex-column flex-sm-row gap-4 align-items-center">
 					<img
 						id="imagePreview"
-						src="{{ user.image if user.image else url_for('static', filename='placeholder.jpg')}}"
+						src="{{ url_for('static', filename='placeholder.jpg') }}"
 						alt="avatar"
 						class="avatar" />
 					<div>

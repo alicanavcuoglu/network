@@ -43,7 +43,6 @@ from helpers import (
     not_found,
     process_hashtags,
     process_text,
-    upload,
     upload_file_to_s3,
     validate_image,
 )
@@ -118,9 +117,30 @@ def load_user():
 # Instead of passing @login_required routes manually
 @app.before_request
 def require_login():
-    if g.user is None:
-        if request.endpoint not in ["login", "register"]:
-            return redirect(url_for("login"))
+    # Don't check login for static files
+    if request.endpoint and 'static' in request.endpoint:
+        return
+   
+    # Log out
+    if request.endpoint and 'logout' in request.endpoint:
+        return logout()
+
+    allowed_endpoints = ['login', 'register', 'static']
+    
+    # If user is not logged in and trying to access protected route
+    if g.user is None and request.endpoint not in allowed_endpoints:
+        return redirect(url_for('login'))
+        
+    # If user is logged in but profile not complete
+    if g.user and not g.user.is_completed and request.endpoint != 'complete_profile':
+        return redirect(url_for('complete_profile'))
+
+
+# @app.before_request
+# def require_profile_completion():
+
+#     current_user = db.get_or_404(User, ses)
+#     if not current_user.is_completed:
 
 
 # Inject user variable to all pages
@@ -214,15 +234,6 @@ def load_unread_notifications():
             g.unread_notifications = []
     else:
         g.unread_notifications = None
-
-
-# @app.route("/email")
-# def email():
-#     return os.getenv("EMAIL_PASSWORD")
-
-# @app.route("/file/<filename>")
-# def uploads(filename):
-#     return send_from_directory("static/avatars", filename)
 
 
 @app.after_request
@@ -337,6 +348,10 @@ def register():
 
 @app.route("/register/complete", methods=["GET", "POST"])
 def complete_profile():
+    current_user = db.get_or_404(User, session["user_id"])
+    if current_user.is_completed:
+        return redirect(url_for("index"))
+    
     if request.method == "POST":
         # Ensure user exists
         user = db.get_or_404(User, session["user_id"])
