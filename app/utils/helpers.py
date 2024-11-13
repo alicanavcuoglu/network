@@ -1,27 +1,15 @@
-from datetime import datetime, timedelta, timezone
 import imghdr
 import os
-from functools import wraps
 import re
+from datetime import datetime, timedelta
+from functools import wraps
 from urllib.parse import urlparse
+
 import boto3
-from flask import (
-    current_app,
-    flash,
-    redirect,
-    render_template,
-    send_from_directory,
-    session,
-    url_for,
-)
-from itsdangerous import URLSafeTimedSerializer
+from flask import flash, redirect, session, url_for
 from werkzeug.utils import secure_filename
 
-from models import User
-
-
-def not_found():
-    return render_template("not-found.html")
+from app.models import User
 
 
 # Login required
@@ -29,7 +17,7 @@ def login_required(f):
     @wraps(f)
     def decorated_function(*args, **kwargs):
         if "user_id" not in session:
-            return redirect(url_for("login"))
+            return redirect(url_for("auth.login"))
         return f(*args, **kwargs)
 
     return decorated_function
@@ -41,7 +29,7 @@ def logout_required(func):
     def decorated_function(*args, **kwargs):
         if session.get("user_id"):
             flash("You are already authenticated.", "info")
-            return redirect(url_for("index"))
+            return redirect(url_for("main.index"))
         return func(*args, **kwargs)
 
     return decorated_function
@@ -64,7 +52,7 @@ def logout_required(func):
 #         return False
 
 # def send_email(to, subject, template):
-#     from app import mail
+#     from app.extensions import dbmail
 #     msg = Message(
 #         subject,
 #         recipients=[to],

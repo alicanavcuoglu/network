@@ -10,9 +10,7 @@ class Config:
     SECURITY_PASSWORD_SALT = os.getenv(
         "SECURITY_PASSWORD_SALT", default="very-important"
     )
-    UPLOAD_EXTENSIONS = [".jpg", ".jpeg", ".png", ".gif"]
-    UPLOAD_PATH = "image_uploads"
-    UPLOAD_AVATAR_PATH = "static/avatars"
+
     MAX_CONTENT_LENGTH = 1024 * 1024  # 1 MB
 
     # Mail Settings

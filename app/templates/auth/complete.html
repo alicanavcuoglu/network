@@ -1,6 +1,6 @@
 {% extends "layout.html" %} {% block title %} Complete your profile {% endblock
 %} {% block main %}
-<form action="{{ url_for('complete_profile') }}" method="post" enctype="multipart/form-data">
+<form action="{{ url_for('auth.complete_profile') }}" method="post" enctype="multipart/form-data">
 	<h1 class="fs-4 text-center">Tell about yourself to others!</h1>
 	<p class="text-center fs-6 fw-lighter">
 		<i>* indicates the field(s) is required.</i>

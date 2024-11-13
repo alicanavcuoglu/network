@@ -1,52 +1,24 @@
-import imghdr
-import json
-import os
-import uuid
-from datetime import date, datetime
-
-import click
-from dotenv import load_dotenv
 from flask import (
-    Flask,
     abort,
     flash,
-    g,
     jsonify,
     redirect,
     render_template,
     request,
-    send_from_directory,
     session,
     url_for,
 )
-from flask.cli import with_appcontext
-from flask_mail import Mail
-from flask_migrate import Migrate
-from flask_socketio import emit
-from markupsafe import Markup, escape
-from sqlalchemy import or_
 from werkzeug.security import check_password_hash, generate_password_hash
-from werkzeug.utils import secure_filename
 
-from config import Config
-from events import socketio, connected_users
-from helpers import (
+from app.extensions import db
+from app.utils.helpers import (
     allowed_file,
     array_to_str,
-    create_notification_link,
-    create_notification_message,
     delete_file_from_s3,
-    format_message_time,
     format_time_ago,
-    login_required,
-    logout_required,
-    not_found,
-    process_hashtags,
-    process_text,
     upload_file_to_s3,
-    validate_image,
 )
-from models import (
+from app.models import (
     Comment,
     Like,
     Message,
@@ -54,9 +26,10 @@ from models import (
     NotificationEnum,
     Post,
     User,
-    db,
 )
-from notifications import (
+from app.routes import main_bp
+from app.routes.error_routes import not_found, unauthorized
+from app.services.notifications import (
     create_notification,
     emit_notification,
     get_all_unread_notifications,
@@ -65,356 +38,17 @@ from notifications import (
     get_unread_notifications,
     mark_as_read,
 )
-from queries import (
-    get_conversation,
-    get_friends,
-    get_latest_conversations,
-    has_unread_messages,
-)
-
-load_dotenv()
-
-app = Flask(__name__)
-migrate = Migrate(app, db)
-
-app.config.from_object(Config)
-
-db.init_app(app)
-mail = Mail(app)
-socketio.init_app(app)
+from app.services.queries import get_friends, get_latest_conversations
 
 
-""" CLEAR DATABASE """
-
-
-# Make sure delete_all_data is correctly defined in this file.
-def delete_all_data():
-    db.session.query(User).delete()
-    db.session.query(Comment).delete()
-    db.session.query(Post).delete()
-    db.session.commit()
-
-
-@click.command(name="delete-db-data")
-@with_appcontext
-def delete_db_data_command():
-    delete_all_data()
-    click.echo("All data has been deleted from the database.")
-
-
-app.cli.add_command(delete_db_data_command)
-
-
-@app.before_request
-def load_user():
-    user_id = session.get("user_id")
-    if user_id:
-        g.user = db.get_or_404(User, user_id)  # Load the user or 404 if not found
-    else:
-        g.user = None  # Set to None if no user is in session
-
-
-# Instead of passing @login_required routes manually
-@app.before_request
-def require_login():
-    # Don't check login for static files
-    if request.endpoint and 'static' in request.endpoint:
-        return
-   
-    # Log out
-    if request.endpoint and 'logout' in request.endpoint:
-        return logout()
-
-    allowed_endpoints = ['login', 'register', 'static']
-    
-    # If user is not logged in and trying to access protected route
-    if g.user is None and request.endpoint not in allowed_endpoints:
-        return redirect(url_for('login'))
-        
-    # If user is logged in but profile not complete
-    if g.user and not g.user.is_completed and request.endpoint != 'complete_profile':
-        return redirect(url_for('complete_profile'))
-
-
-# Inject user variable to all pages
-# https://flask.palletsprojects.com/en/3.0.x/templating/#context-processors
-@app.context_processor
-def inject_user():
-    if "user_id" in session:
-        user = User.query.get(session["user_id"])
-        return dict(current_user=user)
-    return dict(current_user=None)
-
-
-@app.errorhandler(401)
-def unauthorized(error):
-    return render_template("errors/401.html"), 401
-
-
-@app.errorhandler(404)
-def not_found_error(error):
-    return render_template("errors/404.html"), 404
-
-
-@app.errorhandler(413)
-def too_large(error):
-    return render_template("errors/413.html"), 413
-
-
-@app.errorhandler(422)
-def unprocessable(error):
-    return render_template("errors/422.html"), 422
-
-
-@app.errorhandler(500)
-def internal_error(error):
-    db.session.rollback()
-    return render_template("errors/500.html"), 500
-
-
-""" Register custom filters """
-
-
-@app.template_filter("time_ago")
-def time_ago_filter(dt):
-    return format_time_ago(dt)
-
-
-@app.template_filter("message_time")
-def message_time_filter(dt):
-    return format_message_time(dt)
-
-
-@app.template_filter("notification_message")
-def notification_message_converter(notification):
-    return create_notification_message(notification)
-
-
-@app.template_filter("notification_link")
-def notification_link_converter(notification):
-    return create_notification_link(notification)
-
-
-@app.template_filter("process_text")
-def process_text_filter(text):
-    processed = process_text(text)
-    return Markup(processed)
-
-
-@app.before_request
-def load_unread_message_status():
-    user_id = session.get("user_id")
-
-    if user_id:
-        current_user = User.query.get(user_id)
-        if current_user:
-            g.has_unread_messages = has_unread_messages(current_user.id)
-        else:
-            g.has_unread_messages = False
-    else:
-        g.has_unread_messages = False
-
-
-@app.before_request
-def load_unread_notifications():
-    user_id = session.get("user_id")
-
-    if user_id:
-        current_user = User.query.get(user_id)
-        if current_user:
-            g.unread_notifications = get_unread_notifications(current_user.id)
-        else:
-            g.unread_notifications = []
-    else:
-        g.unread_notifications = None
-
-
-@app.after_request
-def after_request(response):
-    """Ensure responses aren't cached"""
-    response.headers["Cache-Control"] = "no-cache, no-store, must-revalidate"
-    response.headers["Expires"] = 0
-    response.headers["Pragma"] = "no-cache"
-    return response
-
-
-@app.route("/logout")
-def logout():
-    """Log user out"""
-
-    # Forget any user_id
-    session.clear()
-
-    # Redirect user to login form
-    return redirect("/")
-
-
-@app.route("/login", methods=["GET", "POST"])
-@logout_required
-def login():
-    """Log user in"""
-
-    # User reached route via POST (as by submitting a form via POST)
-    if request.method == "POST":
-        username = request.form["username"]
-        password = request.form["password"]
-
-        user = User.query.filter_by(username=username).first()
-
-        if user is None or not check_password_hash(user.password, password):
-            flash("Invalid username or password!", "error")
-            return redirect("/login")
-
-        # Remember which user has logged in
-        session["user_id"] = user.id
-
-        # Redirect user to home page
-        return redirect("/")
-
-    # User reached route via GET (as by clicking a link or via redirect)
-    else:
-        return render_template("login.html")
-
-
-@app.route("/profiles")
+@main_bp.route("/profiles")
 def user_list():
     # Get all users
     users = User.query.all()
     return render_template("profiles/list.html", users=users)
 
 
-@app.route("/register", methods=["GET", "POST"])
-@logout_required
-def register():
-    if request.method == "POST":
-        # Form values
-        username = request.form["username"]
-        email = request.form["email"]
-        password = request.form["password"]
-        confirmation = request.form["confirmation"]
-
-        # Ensure fullname was submitted
-        if not username or not email or not password or not confirmation:
-            flash("Please fill all fields!", "error")
-            return redirect("/register")
-
-        # Check username
-        if User.query.filter_by(username=username).first():
-            flash("Username exists!", "error")
-            return redirect("/register")
-
-        # Check email
-        if User.query.filter_by(email=email).first():
-            flash("Email exists!", "error")
-            return redirect("/register")
-
-        # Check passwords
-        if password != confirmation:
-            flash("Passwords should match!", "error")
-            return redirect("/register")
-
-        # Check password for minimum length
-        if len(password) < 8:
-            flash("New password must be at least 8 characters long.", "error")
-            return redirect("/register")
-
-        # Generate hash password to ensure safety
-        hashed_password = generate_password_hash(password)
-
-        # User model
-        user = User(username=username, email=email, password=hashed_password)
-
-        db.session.add(user)
-        db.session.commit()
-        session["user_id"] = user.id
-
-        # token = generate_token(email)
-        # confirm_url = url_for("confirm_email", token=token, _external=True)
-        # html = render_template("profiles/email_confirmation.html", confirm_url=confirm_url)
-        # subject = "Please confirm your email"
-        # send_email(user.email, subject, html)
-
-        return redirect(url_for("complete_profile"))
-
-    return render_template("register.html")
-
-
-@app.route("/register/complete", methods=["GET", "POST"])
-def complete_profile():
-    current_user = db.get_or_404(User, session["user_id"])
-    if current_user.is_completed:
-        return redirect(url_for("index"))
-    
-    if request.method == "POST":
-        # Ensure user exists
-        user = db.get_or_404(User, session["user_id"])
-        if not user:
-            return redirect("/login")
-
-        # Form values
-        image = request.files["image"]
-        name = request.form["name"]
-        surname = request.form["surname"]
-        location = request.form["location"]
-        about = request.form["about-me"]
-        working_on = request.form["working-on"]
-        interests = array_to_str(request.form.getlist("interests[]"))
-        classes = array_to_str(request.form.getlist("classes[]"))
-        links = array_to_str(request.form.getlist("link[]"))
-
-        # Check required fields exists
-        if not name or not surname or not about:
-            flash("Please fill the required fields!", "error")
-            return redirect("/register/complete")
-
-        image_path = upload_file_to_s3(image)
-
-        # Update user
-        user.image = image_path
-        user.name = name
-        user.surname = surname
-        user.location = location
-        user.about = about
-        user.working_on = working_on
-        user.interests = interests
-        user.classes = classes
-        user.links = links
-        user.is_completed = True
-
-        # Save changes
-        try:
-            db.session.commit()
-            flash("Successfully created an account.", "success")
-            return redirect("/")
-        except:
-            db.session.rollback()
-            flash("Something went wrong, try again.", "error")
-            return redirect("/register/complete")
-
-    return render_template("profiles/complete.html")
-
-
-# # Email confirmation from https://www.freecodecamp.org/news/setup-email-verification-in-flask-app/
-# @app.route("/confirm/<token>")
-# def confirm_email(token):
-#     current_user = User.query.get(session["user_id"])
-#     if current_user.is_confirmed:
-#         flash("Account already confirmed.", "success")
-#         return redirect(url_for("index"))
-#     email = confirm_token(token)
-#     user = User.query.filter_by(email=current_user.email).first_or_404()
-#     if user.email == email:
-#         user.is_confirmed = True
-#         user.confirmed_on = datetime.now()
-#         db.session.add(user)
-#         db.session.commit()
-#         flash("You have confirmed your account. Thanks!", "success")
-#     else:
-#         flash("The confirmation link is invalid or has expired.", "error")
-#     return redirect(url_for("index"))
-
-
-@app.route("/profiles/<username>")
+@main_bp.route("/profiles/<username>")
 def user_profile(username):
     user = db.first_or_404(db.select(User).filter_by(username=username))
 
@@ -424,27 +58,27 @@ def user_profile(username):
 """ SETTINGS """
 
 
-@app.route("/settings")
+@main_bp.route("/settings")
 def settings():
     user = db.get_or_404(User, session["user_id"])
 
     return render_template("profiles/settings.html", user=user)
 
 
-@app.route("/profiles/<int:id>/delete", methods=["POST"])
+@main_bp.route("/profiles/<int:id>/delete", methods=["POST"])
 def user_delete(id):
     user = db.get_or_404(User, id)
 
     if user.id != session["user_id"]:
-        return unauthorized()
+        return abort(401)
 
     db.session.delete(user)
     db.session.commit()
     session.clear()
-    return redirect(url_for("index"))
+    return redirect(url_for("main.index"))
 
 
-@app.route("/settings/general", methods=["POST"])
+@main_bp.route("/settings/general", methods=["POST"])
 def general_settings():
     image = request.files["image"]
     name = request.form["name"]
@@ -461,7 +95,7 @@ def general_settings():
             flash(
                 "This email is already in use. Please use a different email.", "error"
             )
-            return redirect(url_for("settings"))
+            return redirect(url_for("main.settings"))
 
     if name and name != current_user.name:
         current_user.name = name
@@ -473,6 +107,7 @@ def general_settings():
     if image.filename:
         if not allowed_file(image.filename):
             return abort(422)
+
         image_path = upload_file_to_s3(image)
         current_user.image = image_path
 
@@ -488,10 +123,10 @@ def general_settings():
         db.session.rollback()
         flash("Something went wrong, try again.", "error")
 
-    return redirect(url_for("settings"))
+    return redirect(url_for("main.settings"))
 
 
-@app.route("/settings/password", methods=["POST"])
+@main_bp.route("/settings/password", methods=["POST"])
 def password_settings():
     current_password = request.form["current-password"]
     new_password = request.form["new-password"]
@@ -503,27 +138,27 @@ def password_settings():
     # Check if the current password is correct
     if not check_password_hash(user.password, current_password):
         flash("Current password is incorrect.", "error")
-        return redirect(url_for("settings"))
+        return redirect(url_for("main.settings"))
 
     # Check if the new passwords match
     if new_password != new_password_again:
         flash("New passwords do not match.", "error")
-        return redirect(url_for("settings"))
+        return redirect(url_for("main.settings"))
 
     # Check password for minimum length
     if len(new_password) < 8:
         flash("New password must be at least 8 characters long.", "error")
-        return redirect(url_for("settings"))
+        return redirect(url_for("main.settings"))
 
     # Update the user's password
     user.password = generate_password_hash(new_password)
     db.session.commit()
 
     flash("Your password has been changed successfully!", "success")
-    return redirect(url_for("settings"))
+    return redirect(url_for("main.settings"))
 
 
-@app.route("/settings/info", methods=["POST"])
+@main_bp.route("/settings/info", methods=["POST"])
 def info_settings():
     # Get user
     user = db.get_or_404(User, session["user_id"])
@@ -556,10 +191,10 @@ def info_settings():
 
     # Flash success message and redirect
     flash("Your information has been updated successfully.", "success")
-    return redirect(url_for("settings"))
+    return redirect(url_for("main.settings"))
 
 
-@app.route("/settings/classes", methods=["POST"])
+@main_bp.route("/settings/classes", methods=["POST"])
 def classes_settings():
     selected_classes = request.form.getlist("classes[]")
 
@@ -576,10 +211,10 @@ def classes_settings():
 
     # Flash a success message and redirect to the settings page
     flash("Your classes have been updated successfully!", "success")
-    return redirect(url_for("settings"))
+    return redirect(url_for("main.settings"))
 
 
-@app.route("/settings/links", methods=["POST"])
+@main_bp.route("/settings/links", methods=["POST"])
 def links_settings():
     links = request.form.getlist("link[]")
 
@@ -596,14 +231,14 @@ def links_settings():
 
     # Flash a success message and redirect to the settings page
     flash("Your links have been updated successfully!", "success")
-    return redirect(url_for("settings"))
+    return redirect(url_for("main.settings"))
 
 
 """ POSTS """
 
 
 # Feed
-@app.route("/")
+@main_bp.route("/")
 def index():
     posts = Post.query.order_by(Post.created_at.desc()).all()
 
@@ -616,7 +251,7 @@ def index():
 
 
 # Friends feed
-@app.route("/friends")
+@main_bp.route("/friends")
 def friends():
     # TODO: Display posts from friends of the user
     posts = Post.query.all()
@@ -624,7 +259,7 @@ def friends():
 
 
 # Post page
-@app.route("/posts/<int:id>")
+@main_bp.route("/posts/<int:id>")
 def post_page(id):
     post = Post.query.get_or_404(id)
     post.total_comments = len(post.comments)
@@ -632,17 +267,17 @@ def post_page(id):
 
 
 # Create post
-@app.route("/post", methods=["POST"])
+@main_bp.route("/post", methods=["POST"])
 def create_post():
     content = request.form["content"]
     post = Post(content=content, user_id=session["user_id"])
     db.session.add(post)
     db.session.commit()
-    return redirect(url_for("index"))
+    return redirect(url_for("main.index"))
 
 
 # Reshare post
-@app.route("/post/<id>/reshare", methods=["POST"])
+@main_bp.route("/post/<id>/reshare", methods=["POST"])
 def reshare_post(id):
     current_user = db.get_or_404(User, session["user_id"])
     parent_post = Post.query.get_or_404(id)
@@ -669,11 +304,11 @@ def reshare_post(id):
         # Emit notification with SocketIO
         emit_notification(notification)
 
-    return redirect(url_for("index"))
+    return redirect(url_for("main.index"))
 
 
 # Delete post
-@app.route("/post/delete/<id>", methods=["DELETE"])
+@main_bp.route("/post/delete/<id>", methods=["DELETE"])
 def delete_post(id):
     post = Post.query.get_or_404(id)
 
@@ -693,7 +328,7 @@ def delete_post(id):
 
 
 # Like post
-@app.route("/like/<id>", methods=["POST"])
+@main_bp.route("/like/<id>", methods=["POST"])
 def like_post(id):
     current_user = db.get_or_404(User, session["user_id"])
     post = db.get_or_404(Post, id)
@@ -733,7 +368,7 @@ def like_post(id):
 
 
 # Like comment
-@app.route("/like/comment/<id>", methods=["POST"])
+@main_bp.route("/like/comment/<id>", methods=["POST"])
 def like_comment(id):
     current_user = db.get_or_404(User, session["user_id"])
     comment = db.get_or_404(Comment, id)
@@ -774,7 +409,7 @@ def like_comment(id):
     return jsonify({"likes": like_count, "isLiked": is_liked})
 
 
-@app.route("/comment/<id>", methods=["POST"])
+@main_bp.route("/comment/<id>", methods=["POST"])
 def comment_post(id):
     content = request.json
 
@@ -814,7 +449,7 @@ def comment_post(id):
 
 
 # Delete comment
-@app.route("/comment/delete/<id>", methods=["DELETE"])
+@main_bp.route("/comment/delete/<id>", methods=["DELETE"])
 def delete_comment(id):
     comment = Comment.query.get_or_404(id)
 
@@ -834,7 +469,7 @@ def delete_comment(id):
 
 
 # Load more comments
-@app.route("/post/<id>/comments")
+@main_bp.route("/post/<id>/comments")
 def load_more_comments(id):
     page = int(request.args["page"]) + 1
     comments = (
@@ -869,7 +504,7 @@ def load_more_comments(id):
 
 
 # Requests
-@app.route("/friends/requests")
+@main_bp.route("/friends/requests")
 def display_friend_requests():
     user = db.get_or_404(User, session["user_id"])
 
@@ -885,7 +520,7 @@ def display_friend_requests():
 
 
 # Send a friend request
-@app.route("/requests/<username>", methods=["POST"])
+@main_bp.route("/requests/<username>", methods=["POST"])
 def send_friend_request(username):
     current_user = db.get_or_404(User, session["user_id"])
     target_user = User.query.filter_by(username=username).first()
@@ -963,7 +598,7 @@ def send_friend_request(username):
 
 
 # Accept a friend request
-@app.route("/requests/<username>/accept", methods=["POST"])
+@main_bp.route("/requests/<username>/accept", methods=["POST"])
 def accept_friend_request(username):
     current_user = db.get_or_404(User, session["user_id"])
     target_user = User.query.filter_by(username=username).one_or_404()
@@ -1011,7 +646,7 @@ def accept_friend_request(username):
 
 
 # Decline a friend request
-@app.route("/requests/<username>/decline", methods=["POST"])
+@main_bp.route("/requests/<username>/decline", methods=["POST"])
 def decline_friend_request(username):
     current_user = db.get_or_404(User, session["user_id"])
     target_user = User.query.filter_by(username=username).one_or_404()
@@ -1034,7 +669,7 @@ def decline_friend_request(username):
 
 
 # Remove a user from friends
-@app.route("/friends/<username>/remove", methods=["DELETE"])
+@main_bp.route("/friends/<username>/remove", methods=["DELETE"])
 def remove_friend(username):
     current_user = db.get_or_404(User, session["user_id"])
     target_user = User.query.filter_by(username=username).one_or_404()
@@ -1057,7 +692,7 @@ def remove_friend(username):
 
 
 # Start a new conversation
-@app.route("/messages/new")
+@main_bp.route("/messages/new")
 def start_conversation():
     friends_data = get_friends(session["user_id"])
     friends = []
@@ -1075,7 +710,7 @@ def start_conversation():
 
 
 # Messages page
-@app.route("/messages")
+@main_bp.route("/messages")
 def view_messages():
     current_user = db.get_or_404(User, session["user_id"])
     messages = get_latest_conversations(current_user.id)
@@ -1084,7 +719,7 @@ def view_messages():
 
 
 # Single message page
-@app.route("/messages/<username>")
+@main_bp.route("/messages/<username>")
 def view_conversation(username):
     # Get current user and friend
     current_user = db.get_or_404(User, session["user_id"])
@@ -1092,7 +727,7 @@ def view_conversation(username):
 
     if current_user.username == username:
         flash("You can't chat with yourself!", "error")
-        return redirect(url_for("view_messages"))
+        return redirect(url_for("main.view_messages"))
 
     # Limit the initial number of messages to load, for example, the latest 20
     message_limit = 20
@@ -1125,11 +760,11 @@ def view_conversation(username):
             has_more=len(messages) == message_limit,
         )
     else:
-        return not_found()
+        return abort(404)
 
 
 # Load more messages
-@app.route("/messages/<username>/more")
+@main_bp.route("/messages/<username>/more")
 def load_more_conversation(username):
     # Get current user and friend
     current_user = db.get_or_404(User, session["user_id"])
@@ -1137,7 +772,7 @@ def load_more_conversation(username):
 
     if current_user.username == username:
         flash("You can't chat with yourself!", "error")
-        return redirect(url_for("view_messages"))
+        return redirect(url_for("main.view_messages"))
 
     # Limit the initial number of messages to load
     message_limit = 20
@@ -1181,7 +816,7 @@ def load_more_conversation(username):
 
 
 # Update read status
-@app.route("/messages/<username>/mark_read", methods=["POST"])
+@main_bp.route("/messages/<username>/mark_read", methods=["POST"])
 def mark_messages_as_read(username):
     # Get current user and friend
     current_user = db.get_or_404(User, session["user_id"])
@@ -1189,7 +824,7 @@ def mark_messages_as_read(username):
 
     if current_user.username == username:
         flash("You can't chat with yourself!", "error")
-        return redirect(url_for("view_messages"))
+        return redirect(url_for("main.view_messages"))
 
     unread_messages = Message.query.filter(
         Message.sender_id == friend.id,
@@ -1210,7 +845,7 @@ def mark_messages_as_read(username):
     )
 
 
-@app.route("/notifications")
+@main_bp.route("/notifications")
 def notifications():
     current_user = db.get_or_404(User, session["user_id"])
     notifications = get_notifications(current_user.id)
@@ -1218,7 +853,7 @@ def notifications():
     return render_template("notifications.html", notifications=notifications)
 
 
-@app.route("/notifications/unread/all")
+@main_bp.route("/notifications/unread/all")
 def all_unread_notifications():
     current_user = db.get_or_404(User, session["user_id"])
     notifications = get_all_unread_notifications(current_user.id)
@@ -1227,14 +862,14 @@ def all_unread_notifications():
     return render_template("notifications-unread.html", notifications=notifications)
 
 
-@app.route("/notifications/unread")
+@main_bp.route("/notifications/unread")
 def unread_notifications():
     current_user = db.get_or_404(User, session["user_id"])
     notifications = get_unread_notifications(current_user.id)
     return jsonify([n.to_dict() for n in notifications])
 
 
-@app.route("/notifications/<int:notification_id>/read", methods=["POST"])
+@main_bp.route("/notifications/<int:notification_id>/read", methods=["POST"])
 def mark_notification_read(notification_id):
     notification = mark_as_read(notification_id, session["user_id"])
 
@@ -1245,7 +880,7 @@ def mark_notification_read(notification_id):
     return jsonify({"status": "success"})
 
 
-@app.route("/notifications/next-unread-notification", methods=["POST"])
+@main_bp.route("/notifications/next-unread-notification", methods=["POST"])
 def next_unread_notification():
     notifications = request.get_json()
 
@@ -1259,7 +894,7 @@ def next_unread_notification():
     return jsonify(notification)
 
 
-@app.route("/notifications/mark-all-read", methods=["POST"])
+@main_bp.route("/notifications/mark-all-read", methods=["POST"])
 def mark_all_notifications_read():
     current_user = db.get_or_404(User, session["user_id"])
     Notification.query.filter_by(recipient_id=current_user.id, is_read=False).update(
@@ -1270,7 +905,7 @@ def mark_all_notifications_read():
 
 
 # Hashtag page
-@app.route("/tags/<string:tag>")
+@main_bp.route("/tags/<string:tag>")
 def tag_view(tag):
     pattern = f"%#{tag}%"
 
@@ -1283,8 +918,3 @@ def tag_view(tag):
         post.comments = sorted(post.comments, key=lambda x: x.created_at)[:3]
 
     return render_template("tags.html", posts=posts, tag=tag)
-
-
-# Run the app
-if __name__ == "__main__":
-    socketio.run(app, host="0.0.0.0", port=5000)

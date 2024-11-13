@@ -1,3 +1,5 @@
+from app.extensions import db
+
 from dataclasses import dataclass
 from datetime import datetime, timezone
 from typing import List
@@ -18,8 +20,6 @@ from sqlalchemy.sql import func
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 import enum
 
-
-db = SQLAlchemy()
 
 # Association table for friends
 friends_table = Table(
