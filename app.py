@@ -136,13 +136,6 @@ def require_login():
         return redirect(url_for('complete_profile'))
 
 
-# @app.before_request
-# def require_profile_completion():
-
-#     current_user = db.get_or_404(User, ses)
-#     if not current_user.is_completed:
-
-
 # Inject user variable to all pages
 # https://flask.palletsprojects.com/en/3.0.x/templating/#context-processors
 @app.context_processor
