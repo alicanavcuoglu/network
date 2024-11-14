@@ -43,35 +43,6 @@ postings.post(post, current_user) }} {% endfor %}
 		});
 	});
 
-	// Like comment
-	document.querySelectorAll(".comment-like-btn").forEach((likeBtn) => {
-		const commentId = likeBtn
-			.closest(".comment")
-			.getAttribute("data-comment-id");
-
-		likeBtn.addEventListener("click", () => {
-			fetch(`/like/comment/${commentId}`, { method: "POST" })
-				.then((response) => response.json())
-				.then((data) => {
-					// Display updated like count
-					document.querySelector(
-						`.comment-like-count-${commentId}`
-					).textContent = String(data.likes);
-
-					if (data.isLiked) {
-						likeBtn.textContent = "Unlike";
-						likeBtn.classList.add("active");
-					} else {
-						likeBtn.textContent = "Like";
-						likeBtn.classList.remove("active");
-					}
-				})
-				.catch((error) => {
-					console.error("Error:", error);
-				});
-		});
-	});
-
 	// Add comment
 	document.querySelectorAll(".add-comment").forEach((addCommentBtn) => {
 		addCommentBtn.addEventListener("click", () => {
@@ -107,41 +78,67 @@ postings.post(post, current_user) }} {% endfor %}
 				fetch(`/post/${postId}/comments?page=${page}`)
 					.then((response) => response.json())
 					.then((data) => {
+						console.log("DATA:", data);
 						//
 						if (data.comments.length > 0) {
 							data.comments.forEach((comment) => {
 								const commentDiv =
 									document.createElement("div");
 								commentDiv.classList.add("comment");
+								commentDiv.setAttribute(
+									"data-comment-id",
+									comment.id
+								);
+								commentDiv.id = `comment-${comment.id}`;
+
 								commentDiv.innerHTML = `
-                  <a href="/profiles/${comment.user.username}"><img
-                    src="${comment.user.image || "/static/placeholder.jpg"}"
-                    alt="${comment.user.username}" class="avatar xs margin-t-2">
-                  </a>
-                  <div class="d-flex flex-column align-items-baseline">
-                    <div class="comment-span text-break">
-                      <a href="/profiles/${
-							comment.user.username
-						}" class="text-decoration-none text-secondary">
-                        <strong>${comment.user.name} ${
-									comment.user.surname
-								}</strong>
-                      </a>
-                      <span class="text-secondary lh-sm small">${
-							comment.content
-						}</span>
-                    </div>
-                    <span class="text-muted text-xs fw-light cursor-pointer" data-bs-toggle="tooltip" data-bs-placement="bottom"
-                      title="${comment.created_at_iso}">${
-									comment.created_at
-								}</span>
-                  </div>
-                  ${
-						comment.own_post
-							? '<button class="delete-btn btn btn-sm margin-t-2 btn-outline-danger flex-shrink-0" ><i class="fa-solid fa-trash"></i></button>'
-							: ""
-					}
-                    `;
+								<a href="/profiles/${comment.user.username}"><img
+								src="${comment.user.image || "/static/placeholder.jpg"}"
+								alt="${comment.user.username}" class="avatar xs margin-t-2">
+								</a>
+								<div class="d-flex flex-column align-items-baseline">
+									<div class="comment-span text-break">
+											<a href="/profiles/${
+												comment.user.username
+											}" class="text-decoration-none text-secondary">
+											<strong>${comment.user.name} ${comment.user.surname}</strong>
+											</a>
+											<span class="text-secondary lh-sm small">${comment.content}
+											</span>
+									</div>
+									<div class="flex align-items-center">
+											<span
+												class="text-muted text-xs fw-light cursor-pointer"
+												data-bs-toggle="tooltip"
+												data-bs-placement="bottom"
+												title="${comment.created_at_iso}"
+												>${comment.created_at}</span
+												>
+											${
+												comment.is_liked_by_user
+													? '<button class="my-btn text-muted comment-like-btn active">Unlike</button>'
+													: '<button class="my-btn text-muted comment-like-btn">Like</button>'
+											}
+											${
+												comment.own_post
+													? '<button class="my-btn text-danger delete-comment-btn">Delete</button>'
+													: ""
+											}
+											<div
+												class="d-inline small fw-light"
+												data-bs-toggle="tooltip"
+												data-bs-placement="right"
+												title="${comment.total_likes} likes">
+												<span
+														class="comment-like-count-${comment.id}"
+														>${comment.total_likes}</span
+														>
+												<i
+														class="fa-solid fa-thumbs-up text-success fs-6"></i>
+											</div>
+									</div>
+								</div>          
+                `;
 								loadBtn.previousElementSibling.appendChild(
 									commentDiv
 								);
@@ -180,21 +177,52 @@ postings.post(post, current_user) }} {% endfor %}
 		});
 	});
 
-	// Delete comment
-	document.querySelectorAll(".delete-comment-btn").forEach((deleteBtn) => {
-		deleteBtn.addEventListener("click", () => {
-			const comment = deleteBtn.closest(".comment");
-			const commentId = comment.getAttribute("data-comment-id");
+	// Like or delete comment
+	document.addEventListener("click", (e) => {
+		// Check if clicked to comment like button
+		if (e.target.classList.contains("comment-like-btn")) {
+			const commentId = e.target
+				.closest(".comment")
+				.getAttribute("data-comment-id");
 
-			fetch(`/comment/delete/${commentId}`, {
-				method: "DELETE",
-			})
+			fetch(`/like/comment/${commentId}`, { method: "POST" })
 				.then((response) => response.json())
-				.then((data) => location.reload())
+				.then((data) => {
+					document.querySelector(
+						`.comment-like-count-${commentId}`
+					).textContent = String(data.likes);
+
+					if (data.isLiked) {
+						e.target.textContent = "Unlike";
+						e.target.classList.add("active");
+					} else {
+						e.target.textContent = "Like";
+						e.target.classList.remove("active");
+					}
+				})
 				.catch((error) => {
 					console.error("Error:", error);
 				});
-		});
+		}
+
+		// Check if clicked to delete comment button
+		if (e.target.classList.contains("delete-comment-btn")) {
+			const comment = e.target.closest(".comment");
+			const commentId = comment.getAttribute("data-comment-id");
+
+			if (confirm("Are you sure you want to delete this comment?")) {
+				fetch(`/comment/${commentId}`, { method: "DELETE" })
+					.then((response) => response.json())
+					.then((data) => {
+						if (data.success) {
+							comment.remove();
+						}
+					})
+					.catch((error) => {
+						console.error("Error:", error);
+					});
+			}
+		}
 	});
 </script>
 {% endblock %}

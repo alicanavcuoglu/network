@@ -103,6 +103,9 @@ class User(db.Model):
     def __repr__(self) -> str:
         return super().__repr__()
 
+    def is_friends(self, user_id):
+        return any(friend.id == user_id for friend in self.friends)
+
 
 # Post model
 class Post(db.Model):
@@ -140,6 +143,15 @@ class Post(db.Model):
     def is_liked_by_user(self, user_id):
         return any(like.user_id == user_id for like in self.likes)
 
+    def total_likes(self) -> int:
+        return len(self.likes)
+
+    def total_comments(self) -> int:
+        return len(self.comments)
+    
+    def latest_comments(self, limit = 3):
+        return sorted(self.comments, key=lambda x: x.created_at)[:limit]
+
 
 # Comment model
 class Comment(db.Model):
@@ -164,6 +176,9 @@ class Comment(db.Model):
 
     def is_liked_by_user(self, user_id):
         return any(like.user_id == user_id for like in self.likes)
+
+    def total_likes(self) -> int:
+        return len(self.likes)
 
 
 # Like model

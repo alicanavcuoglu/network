@@ -60,7 +60,7 @@ def register():
         # Send email
         # token = generate_token(email)
         # confirm_url = url_for("confirm_email", token=token, _external=True)
-        # html = render_template("profiles/email_confirmation.html", confirm_url=confirm_url)
+        # html = render_template("auth/email_confirmation.html", confirm_url=confirm_url)
         # subject = "Please confirm your email"
         # send_email(user.email, subject, html)
 

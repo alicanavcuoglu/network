@@ -1,7 +1,8 @@
+from flask import session
 from sqlalchemy import case, select
 
 from app.services import db
-from app.models import Message, User
+from app.models import Message, Post, User
 
 
 # Friends of current user
@@ -86,3 +87,13 @@ def has_unread_messages(user_id):
     )
 
     return unread_count > 0
+
+
+def get_posts_of_user(user_id):
+    posts = (
+        Post.query.filter(Post.user_id == user_id)
+        .order_by(Post.created_at.desc())
+        .all()
+    )
+
+    return posts

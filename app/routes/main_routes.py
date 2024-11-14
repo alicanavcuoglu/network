@@ -38,21 +38,65 @@ from app.services.notifications import (
     get_unread_notifications,
     mark_as_read,
 )
-from app.services.queries import get_friends, get_latest_conversations
+from app.services.queries import (
+    get_friends,
+    get_latest_conversations,
+    get_posts_of_user,
+)
 
 
 @main_bp.route("/profiles")
 def user_list():
     # Get all users
     users = User.query.all()
-    return render_template("profiles/list.html", users=users)
+    return render_template("users/list.html", users=users)
 
 
 @main_bp.route("/profiles/<username>")
 def user_profile(username):
     user = db.first_or_404(db.select(User).filter_by(username=username))
+    is_friends = user.is_friends(session["user_id"])
+    can_view_posts = True
 
-    return render_template("profiles/profile.html", user=user)
+    # If user is neither friend nor have a public account don't display posts
+    if not user.is_public and not is_friends:
+        can_view_posts = False
+        return render_template(
+            "users/profile.html", user=user, can_view_posts=can_view_posts, posts=[]
+        )
+
+    posts = get_posts_of_user(user.id)
+
+    return render_template(
+        "users/profile.html", user=user, posts=posts, can_view_posts=can_view_posts
+    )
+
+
+@main_bp.route("/profiles/<username>/about")
+def user_profile_about(username):
+    user = db.first_or_404(db.select(User).filter_by(username=username))
+
+    # Display user's details
+
+    return render_template("users/profile.html", user=user)
+
+
+@main_bp.route("/profiles/<username>/friends")
+def user_profile_friends(username):
+    user = db.first_or_404(db.select(User).filter_by(username=username))
+
+    # Display user's friends
+
+    return render_template("users/profile.html", user=user)
+
+
+@main_bp.route("/profiles/<username>/groups")
+def user_profile_groups(username):
+    user = db.first_or_404(db.select(User).filter_by(username=username))
+
+    # Display user's groups
+
+    return render_template("users/profile.html", user=user)
 
 
 """ SETTINGS """
@@ -62,7 +106,7 @@ def user_profile(username):
 def settings():
     user = db.get_or_404(User, session["user_id"])
 
-    return render_template("profiles/settings.html", user=user)
+    return render_template("users/settings.html", user=user)
 
 
 @main_bp.route("/profiles/<int:id>/delete", methods=["POST"])
@@ -242,11 +286,6 @@ def links_settings():
 def index():
     posts = Post.query.order_by(Post.created_at.desc()).all()
 
-    # Attach the latest 3 comments to each post
-    for post in posts:
-        post.total_comments = len(post.comments)
-        post.comments = sorted(post.comments, key=lambda x: x.created_at)[:3]
-
     return render_template("index.html", posts=posts)
 
 
@@ -262,8 +301,7 @@ def friends():
 @main_bp.route("/posts/<int:id>")
 def post_page(id):
     post = Post.query.get_or_404(id)
-    post.total_comments = len(post.comments)
-    return render_template("post-page.html", post=post)
+    return render_template("post_page.html", post=post)
 
 
 # Create post
@@ -493,7 +531,9 @@ def load_more_comments(id):
             "content": comment.content,
             "created_at_iso": comment.created_at,
             "created_at": format_time_ago(comment.created_at),
-            "own_post": comment.user.id == session["user_id"],
+            "own_post": comment.user_id == session["user_id"],
+            "is_liked_by_user": comment.is_liked_by_user(session["user_id"]),
+            "total_likes": comment.total_likes(),
         }
         comment_list.append(comment_data)
 
@@ -516,7 +556,7 @@ def display_friend_requests():
         else []
     )
 
-    return render_template("profiles/requests.html", users=received_requests)
+    return render_template("users/requests.html", users=received_requests)
 
 
 # Send a friend request
@@ -859,7 +899,7 @@ def all_unread_notifications():
     notifications = get_all_unread_notifications(current_user.id)
     print(notifications)
 
-    return render_template("notifications-unread.html", notifications=notifications)
+    return render_template("notifications_unread.html", notifications=notifications)
 
 
 @main_bp.route("/notifications/unread")

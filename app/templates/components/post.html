@@ -124,7 +124,7 @@
 			"like"}}</span
 		>
 		<span class="comment-count-{{ post.id | string }}"
-			>{{ post.total_comments }} comments</span
+			>{{ post.total_comments() }} comments</span
 		>
 		<span class="share-count-{{ post.id | string }}"
 			>{{ post.shares }} shares</span
@@ -160,7 +160,7 @@
 	<div class="comments-section">
 		<h6>Comments:</h6>
 		<div class="comments d-flex flex-column gap-3">
-			{% for comment in post.comments %}
+			{% for comment in post.latest_comments() %}
 			<div
 				class="comment"
 				data-comment-id="{{ comment.id }}"
@@ -180,7 +180,7 @@
 						</a>
 						<span class="lh-sm small">{{ comment.content }}</span>
 					</div>
-					<d class="flex align-items-center">
+					<div class="flex align-items-center">
 						<span
 							class="text-muted text-xs fw-light cursor-pointer"
 							data-bs-toggle="tooltip"
@@ -214,12 +214,12 @@
 							<i
 								class="fa-solid fa-thumbs-up text-success fs-6"></i>
 						</div>
-					</d>
+					</div>
 				</div>
 			</div>
 			{% endfor %}
 		</div>
-		{% if post.total_comments > 3 %}
+		{% if post.total_comments() > 3 %}
 		<button
 			class="btn btn-link load-more-comments"
 			data-post-id="{{ post.id }}"
