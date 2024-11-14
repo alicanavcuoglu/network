@@ -16,6 +16,7 @@ def register():
         email = request.form["email"]
         password = request.form["password"]
         confirmation = request.form["confirmation"]
+        terms = request.form.get("terms")
 
         # Ensure fullname was submitted
         if not username or not email or not password or not confirmation:
@@ -40,6 +41,10 @@ def register():
         # Check password for minimum length
         if len(password) < 8:
             flash("New password must be at least 8 characters long.", "error")
+            return redirect(url_for("auth.register"))
+
+        if not terms:
+            flash("You must accept the Terms of Use to register.", "error")
             return redirect(url_for("auth.register"))
 
         # Generate hash password to ensure safety
