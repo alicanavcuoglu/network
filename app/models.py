@@ -106,6 +106,12 @@ class User(db.Model):
     def is_friends(self, user_id):
         return any(friend.id == user_id for friend in self.friends)
 
+    def total_friends(self) -> int:
+        return len(self.friends)
+
+    def total_posts(self) -> int:
+        return len(self.posts)
+
 
 # Post model
 class Post(db.Model):
@@ -148,8 +154,8 @@ class Post(db.Model):
 
     def total_comments(self) -> int:
         return len(self.comments)
-    
-    def latest_comments(self, limit = 3):
+
+    def latest_comments(self, limit=3):
         return sorted(self.comments, key=lambda x: x.created_at)[:limit]
 
 

@@ -1,0 +1,96 @@
+{% macro cover(user, current_user) %}
+<div
+	class="mt-4 mb-4 d-flex flex-column flex-sm-row align-items-stretch align-items-sm-center justify-content-between row-gap-4">
+	<div
+		class="d-flex flex-column flex-sm-row text-center text-sm-start justify-content-center align-items-center gap-2 gap-sm-4">
+		<img
+			src="{{ user.image if user.image else url_for('static', filename='placeholder.jpg')}}"
+			alt="{{user.name}} {{user.surname}}"
+			class="avatar lg mx-auto" />
+		<div class="d-flex flex-column gap-2">
+			<div class="d-flex flex-column gap-1 mb-2">
+				<h1 class="mb-0 fs-2 lh-1">{{user.name}} {{user.surname}}</h1>
+				{% if user.working_on %}
+				<p class="small mb-0">
+					<span class="text-secondary"> {{ user.working_on}} </span>
+				</p>
+				{% endif %} {% if user.location %}
+				<p class="small mb-0">
+					<i class="fas fa-map-marker-alt mr-2"></i>
+					<span class="text-secondary"> {{ user.location}} </span>
+				</p>
+				{% endif %}
+			</div>
+			{% if user.id != current_user.id %}
+			<div class="d-flex justify-content-center gap-2">
+				{% if user in current_user.friends %}
+				<button class="btn btn-primary">
+					<i class="fa-regular fa-message me-1 small"></i>
+					<span class="small">Message</span>
+				</button>
+				<button
+					class="btn btn-outline-secondary"
+					data-bs-toggle="modal"
+					data-bs-target="#removeFriend-{{ user.username }}"
+					onclick="event.preventDefault()">
+					<i class="fa-solid fa-trash me-1 small"></i>
+					<span class="small">Remove</span>
+				</button>
+				{% elif user in current_user.pending_requests %}
+				<button class="btn btn-secondary add-btn" disabled>
+					<i class="fa-solid fa-clock me-1 small"></i>
+					<span class="small">Pending</span>
+				</button>
+				{% elif user in current_user.received_requests %}
+				<button class="btn btn-primary accept-btn">
+					<i class="fa-solid fa-user-check me-1 small"></i>
+					<span class="small">Accept</span>
+				</button>
+				<button class="btn btn-outline-danger decline-btn">
+					<i class="fa-solid fa-x me-1 small"></i>
+					<span class="small">Decline</span>
+				</button>
+				{% else %}
+				<button class="btn btn-outline-primary add-btn">
+					<i class="fas fa-plus me-1 small"></i>
+					<span class="small">Add friend</span>
+				</button>
+				{% endif %}
+			</div>
+			{% else %}
+			<a href="/settings"
+				><button class="btn btn-outline-primary">
+					<span class="small"> Edit profile </span>
+				</button>
+			</a>
+			{% endif %}
+		</div>
+	</div>
+
+	<div class="d-flex flex-sm-column align-items-start">
+		<ul
+			class="d-flex flex-sm-column flex-grow-1 flex-wrap gap-2 text-center">
+			<li
+				class="list-inline-item flex-grow-1 justify-content-center d-flex align-items-center gap-2">
+				<i class="fa-solid fa-comments fs-4"></i>
+				<div>
+					<h5 class="font-weight-bold d-block mb-0">
+						{{ user.total_posts() }}
+					</h5>
+					<small class="text-muted"> Posts </small>
+				</div>
+			</li>
+			<li
+				class="list-inline-item flex-grow-1 justify-content-center d-flex align-items-center gap-2">
+				<i class="fa-solid fa-users fs-4"></i>
+				<div>
+					<h5 class="font-weight-bold d-block mb-0">
+						{{ user.total_friends() }}
+					</h5>
+					<small class="text-muted">Friends</small>
+				</div>
+			</li>
+		</ul>
+	</div>
+</div>
+{% endmacro %}

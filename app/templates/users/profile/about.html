@@ -1,0 +1,88 @@
+{% extends "layout.html" %} {% import 'components/post.html' as postings %} {%
+from 'components/user_cover.html' import cover %} {% block title %} {{ user.name
+}} {{ user.surname }} {% endblock %} {% block main %}
+<!-- UI TEMPLATES from https://bbbootstrap.com/snippets/individual-user-profile-social-network-94176986, https://www.bootdey.com/snippets/view/bs4-profile-with-timeline-posts -->
+<div>
+	<div>
+		<!-- Cover -->
+		{{ cover(user, current_user) }}
+		<!-- Tabs -->
+		<div
+			class="list-group d-flex flex-row text-center overflow-x-auto bg-light list-group-flush account-settings-links border-bottom">
+			<a
+				href="{{ url_for('main.user_profile', username=user.username) }}"
+				class="list-group-item list-group-item-action">
+				Posts
+			</a>
+			<a
+				href="{{ url_for('main.user_profile_about', username=user.username) }}"
+				class="list-group-item list-group-item-action active">
+				About
+			</a>
+			<a
+				href="{{ url_for('main.user_profile_friends', username=user.username) }}"
+				class="list-group-item list-group-item-action">
+				Friends
+			</a>
+			<a
+				href="{{ url_for('main.user_profile_groups', username=user.username) }}"
+				class="list-group-item list-group-item-action">
+				Groups
+			</a>
+		</div>
+	</div>
+
+	<!-- Tab -->
+	<div class="py-4">
+		<div class="mb-4">
+			<h2 class="fs-4">About</h2>
+			<p>{{user.about}}</p>
+		</div>
+		{% if user.interests %}
+		<div class="mb-4">
+			<h2 class="fs-4">Interests</h2>
+			<div class="d-flex flex-wrap gap-2">
+				{% set interests = user.interests.split(",") if user.interests
+				else [] %} {% for interest in interests%}
+				<span class="badge bg-light text-dark fs-6 fw-light"
+					>{{ interest }}</span
+				>
+				{% endfor %}
+			</div>
+		</div>
+		{% endif %} {% if user.classes %}
+		<div class="mb-4">
+			<h2 class="fs-4">Classes Taken</h2>
+			<div class="d-flex flex-wrap gap-2">
+				{% set classes = user.classes.split(",") if user.classes else []
+				%} {% for class in classes%}
+				<span class="badge bg-light text-dark fs-6 fw-light"
+					>{{ class }}</span
+				>
+				{% endfor %}
+			</div>
+		</div>
+		{% endif %} {% if user.links %}
+		<div class="mb-4">
+			<h2 class="fs-4">Social Links</h2>
+			{% set links = user.links.split(",") if user.links else [] %} {% for
+			link in links%} {% if 'http' in link %}
+			<a
+				href="{{ link }}"
+				class="d-block link-body-emphasis"
+				target="_blank"
+				>{{ link }}</a
+			>
+			{% else %}
+			<a
+				href="http://{{ link }}"
+				class="d-block link-body-emphasis"
+				target="_blank"
+				>{{ link }}</a
+			>
+			{% endif %} {% endfor %}
+		</div>
+		{% endif %}
+	</div>
+</div>
+{% endblock %}

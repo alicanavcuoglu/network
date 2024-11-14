@@ -5,11 +5,11 @@ from app.services import db
 from app.models import Message, Post, User
 
 
-# Friends of current user
+# Friends of user
 def get_friends(user_id):
-    current_user = db.get_or_404(User, user_id)
+    user = db.get_or_404(User, user_id)
 
-    return current_user.friends
+    return user.friends
 
 
 # Errors fixed by ChatGPT
@@ -89,7 +89,7 @@ def has_unread_messages(user_id):
     return unread_count > 0
 
 
-def get_posts_of_user(user_id):
+def get_posts(user_id):
     posts = (
         Post.query.filter(Post.user_id == user_id)
         .order_by(Post.created_at.desc())
@@ -97,3 +97,20 @@ def get_posts_of_user(user_id):
     )
 
     return posts
+
+
+def get_user_by_username(username, posts=False):
+    query = select(User).filter_by(username=username, is_completed=True)
+
+    if posts:
+        query.outerjoin(User.posts)
+
+    return db.first_or_404(query)
+
+
+# TODO: Get user's groups
+def get_groups(user_id):
+    # groups = select(Group).filter_by(user_id in members)
+    ...
+
+    # return db.first_or_404(query)

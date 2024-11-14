@@ -1,16 +1,18 @@
-{% extends "layout.html" %} {% block title %} Profiles {% endblock %} {% block
+{% extends "layout.html" %} {% from 'components/user_card.html' import card %} {% block title %} Profiles {% endblock %} {% block
 main %}
 <!-- SEARCH -->
 <div class="mb-3">
 	<form action="/profiles" method="get">
 		<div class="input-group">
-			<button
-				class="btn btn-outline-secondary"
-				type="submit">
+			<button class="btn btn-outline-secondary" type="submit">
 				<i class="fa-solid fa-magnifying-glass"></i>
 			</button>
 
-			<input type="text" name="q" class="form-control" placeholder="Search for people..." />
+			<input
+				type="text"
+				name="q"
+				class="form-control"
+				placeholder="Search for people..." />
 		</div>
 	</form>
 </div>
@@ -18,145 +20,7 @@ main %}
 <!-- PROFILES -->
 <ul class="list-group">
 	{% for user in users %}
-	<a
-		href="/profiles/{{ user.username }}"
-		class="list-group-item list-group-item-action"
-		data-user-username="{{ user.username }}">
-		<div class="d-flex align-items-start justify-content-between py-2">
-			<div class="d-flex align-items-start">
-				<img
-					src="{{ user.image if user.image else url_for('static', filename='placeholder.jpg')}}"
-					alt="{{ user.username }}"
-					class="avatar md" />
-				<div
-					class="d-flex flex-column ms-2 margin-t-2 text-black gap-23">
-					<div>
-						<h4 class="mb-0 fs-6">
-							{{ user.name }} {{ user.surname }}
-						</h4>
-						{% if user.working_on %}
-						<p class="small text-secondary mb-0">
-							{{ user.working_on }}
-						</p>
-						{% endif %} {% if user.location %}
-						<p class="text-xs mb-0">
-							<i class="fas fa-map-marker-alt mr-2"></i>
-							<span class="text-secondary">
-								{{ user.location}}
-							</span>
-						</p>
-						{% endif %}
-					</div>
-					<div>
-						{% if user.classes %}
-						<div
-							class="d-flex flex-wrap align-items-center gap-1 text-xs text-secondary fw-medium mb-1">
-							<strong> Classes: </strong>
-							{% set classes = user.classes.split(",")[:3] if
-							user.classes else [] %} {% for class in classes %}
-							<span class="border rounded border-secondary px-1">
-								{{ class }}
-							</span>
-							{% endfor %}
-						</div>
-						{% endif %} {% if user.interests %}
-						<div
-							class="d-flex flex-wrap align-items-center gap-1 text-xs text-secondary fw-medium">
-							<strong> Interests: </strong>
-							{% set interests = user.interests.split(",")[:3] if
-							user.interests else [] %} {% for interest in
-							interests %}
-							<span class="border rounded border-secondary px-1">
-								{{ interest }}
-							</span>
-							{% endfor %}
-						</div>
-						{% endif %}
-					</div>
-				</div>
-			</div>
-			<div class="d-flex flex-wrap gap-2">
-				{% if user.id != current_user.id %} {% if user in
-				current_user.friends %}
-				<button class="btn btn-primary">
-					<i class="fa-regular fa-message me-1 small"></i>
-					<span class="small">Message</span>
-				</button>
-				<button
-					class="btn btn-outline-secondary"
-					data-bs-toggle="modal"
-					data-bs-target="#removeFriend-{{ user.username }}"
-					onclick="event.preventDefault()">
-					<i class="fa-solid fa-trash me-1 small"></i>
-					<span class="small">Remove</span>
-				</button>
-				{% elif user in current_user.pending_requests %}
-				<button class="btn btn-secondary add-btn" disabled>
-					<i class="fa-solid fa-clock me-1 small"></i>
-					<span class="small">Pending</span>
-				</button>
-				{% elif user in current_user.received_requests %}
-				<button class="btn btn-primary accept-btn">
-					<i class="fa-solid fa-user-check me-1 small"></i>
-					<span class="small">Accept</span>
-				</button>
-				<button class="btn btn-outline-danger decline-btn">
-					<i class="fa-solid fa-x me-1 small"></i>
-					<span class="small">Decline</span>
-				</button>
-				{% else %}
-				<button class="btn btn-outline-primary add-btn">
-					<i class="fas fa-plus me-1 small"></i>
-					<span class="small">Add friend</span>
-				</button>
-				{% endif %} {% endif %}
-			</div>
-		</div>
-	</a>
-
-	<!-- Delete friend modal -->
-	<div
-		class="modal fade"
-		data-user-username="{{ user.username }}"
-		tabindex="-1"
-		id="removeFriend-{{ user.username }}"
-		aria-labelledby="removeFriendLabel-{{ user.username }}"
-		aria-hidden="true">
-		<div class="modal-dialog modal-dialog-centered">
-			<div class="modal-content">
-				<div class="container">
-					<div class="modal-header">
-						<h5
-							class="modal-title"
-							id="removeFriendLabel-{{ user.username }}">
-							Remove Friend?
-						</h5>
-						<button
-							type="button"
-							class="btn-close"
-							data-bs-dismiss="modal"
-							aria-label="Close"></button>
-					</div>
-					<div class="modal-body">
-						Are you sure you want to remove this user from your
-						friends?
-					</div>
-					<div class="modal-footer">
-						<button
-							type="button"
-							class="btn btn-secondary"
-							data-bs-dismiss="modal">
-							Cancel
-						</button>
-						<!-- Delete Friend Button -->
-						<button type="button" class="btn btn-danger remove-btn">
-							Remove
-						</button>
-					</div>
-				</div>
-			</div>
-		</div>
-	</div>
+	{{ card(user, current_user )}}
 	{% endfor %}
 </ul>
 

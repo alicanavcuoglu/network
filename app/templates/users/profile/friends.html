@@ -1,0 +1,72 @@
+{% extends "layout.html" %} {% from 'components/user_card.html' import card %}
+{% from 'components/user_cover.html' import cover %} {% block title %} {{
+user.name }} {{ user.surname }} {% endblock %} {% block main %}
+<!-- UI TEMPLATES from https://bbbootstrap.com/snippets/individual-user-profile-social-network-94176986, https://www.bootdey.com/snippets/view/bs4-profile-with-timeline-posts -->
+<div>
+	<div>
+		<!-- Cover -->
+		{{ cover(user, current_user) }}
+		<!-- Tabs -->
+		<div
+			class="list-group d-flex flex-row text-center overflow-x-auto bg-light list-group-flush account-settings-links border-bottom">
+			<a
+				href="{{ url_for('main.user_profile', username=user.username) }}"
+				class="list-group-item list-group-item-action">
+				Posts
+			</a>
+			<a
+				href="{{ url_for('main.user_profile_about', username=user.username) }}"
+				class="list-group-item list-group-item-action">
+				About
+			</a>
+			<a
+				href="{{ url_for('main.user_profile_friends', username=user.username) }}"
+				class="list-group-item list-group-item-action active">
+				Friends
+			</a>
+			<a
+				href="{{ url_for('main.user_profile_groups', username=user.username) }}"
+				class="list-group-item list-group-item-action">
+				Groups
+			</a>
+		</div>
+	</div>
+
+	<!-- Tab -->
+	<div class="py-4">
+		{% if can_view %} {% if friends|length > 0 %}
+		<ul class="list-group">
+			{% for friend in friends %} {{ card(friend, current_user, False) }}
+			{% endfor %}
+		</ul>
+		{% else %}
+		<div class="profile-div-wrapper">
+			<div class="icon-box border">
+				<i class="fa-solid fa-user-group fs-1 text-muted"></i>
+			</div>
+			<h3 class="mb-0">Become friends</h3>
+			<p class="mb-2 text-secondary">
+				Looks like this user is flying solo for now. Be the first to
+				send them a friend request and start a new connection!
+			</p>
+		</div>
+		{% endif %} {% else %}
+		<div class="profile-div-wrapper">
+			<div class="icon-box border">
+				<i class="fa-solid fa-lock fs-1 text-muted"></i>
+			</div>
+			<h3 class="mb-0">This account is private</h3>
+			<p class="mb-2 text-secondary">
+				Add this user as a friend to view their friends. You can view
+				the user's about section before connecting with them.
+			</p>
+			<a
+				href="{{ url_for('main.user_profile_about', username=user.username) }}"
+				class="btn btn-primary w-100"
+				>About</a
+			>
+		</div>
+		{% endif %}
+	</div>
+</div>
+{% endblock %}

@@ -8,6 +8,7 @@ from flask import (
     session,
     url_for,
 )
+from sqlalchemy import select
 from werkzeug.security import check_password_hash, generate_password_hash
 
 from app.extensions import db
@@ -40,63 +41,82 @@ from app.services.notifications import (
 )
 from app.services.queries import (
     get_friends,
+    get_groups,
     get_latest_conversations,
-    get_posts_of_user,
+    get_posts,
+    get_user_by_username,
 )
 
 
 @main_bp.route("/profiles")
 def user_list():
     # Get all users
-    users = User.query.all()
-    return render_template("users/list.html", users=users)
+    users = db.session.execute(select(User).filter_by(is_completed=True)).scalars().all()
+    print(users)
+    return render_template("users/profiles.html", users=users)
 
 
+# User's posts
 @main_bp.route("/profiles/<username>")
 def user_profile(username):
-    user = db.first_or_404(db.select(User).filter_by(username=username))
+    user = get_user_by_username(username, posts=True)
     is_friends = user.is_friends(session["user_id"])
-    can_view_posts = True
 
     # If user is neither friend nor have a public account don't display posts
     if not user.is_public and not is_friends:
-        can_view_posts = False
         return render_template(
-            "users/profile.html", user=user, can_view_posts=can_view_posts, posts=[]
+            "users/profile/index.html", user=user, posts=[], can_view=False
         )
 
-    posts = get_posts_of_user(user.id)
-
     return render_template(
-        "users/profile.html", user=user, posts=posts, can_view_posts=can_view_posts
+        "users/profile/index.html", user=user, posts=user.posts, can_view=True
     )
 
 
+# User's about
 @main_bp.route("/profiles/<username>/about")
 def user_profile_about(username):
-    user = db.first_or_404(db.select(User).filter_by(username=username))
+    user = get_user_by_username(username)
 
-    # Display user's details
-
-    return render_template("users/profile.html", user=user)
+    return render_template("users/profile/about.html", user=user)
 
 
+# User's friends
 @main_bp.route("/profiles/<username>/friends")
 def user_profile_friends(username):
-    user = db.first_or_404(db.select(User).filter_by(username=username))
+    user = get_user_by_username(username)
+    is_friends = user.is_friends(session["user_id"])
 
-    # Display user's friends
+    if not user.is_public and not is_friends:
+        return render_template(
+            "users/profile/friends.html", user=user, friends=[], can_view=False
+        )
 
-    return render_template("users/profile.html", user=user)
+    # Get friends
+    friends = get_friends(user.id)
+
+    return render_template(
+        "users/profile/friends.html", user=user, friends=friends, can_view=True
+    )
 
 
+# User's groups
 @main_bp.route("/profiles/<username>/groups")
 def user_profile_groups(username):
     user = db.first_or_404(db.select(User).filter_by(username=username))
+    is_friends = user.is_friends(session["user_id"])
 
-    # Display user's groups
+    if not user.is_public and not is_friends:
+        return render_template(
+            "users/profile/groups.html", user=user, groups=[], can_view=False
+        )
 
-    return render_template("users/profile.html", user=user)
+    # TODO: Get user's groups
+    groups = get_groups(user.id)
+
+    return render_template(
+        "users/profile/groups.html", user=user, groups=[], can_view=True
+    )
 
 
 """ SETTINGS """

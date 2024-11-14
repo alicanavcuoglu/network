@@ -100,8 +100,8 @@ label.btn {
 .post {
   border: 1px solid #ddd;
   border-radius: 5px;
-  padding: 15px;
-  margin: 15px 0;
+  padding: 1rem;
+  margin-bottom: 1rem;
   background-color: #f9f9f9;
 }
 
@@ -144,7 +144,7 @@ label.btn {
   cursor: pointer;
 }
 
-.margin-t-2 {
+.mt-2px {
   margin-top: 2px;
 }
 
@@ -198,6 +198,24 @@ label.btn {
   line-clamp: 2;
   -webkit-box-orient: vertical;
   line-height: 20px;
+}
+
+.user-working-preview {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: -webkit-box;
+  -webkit-line-clamp: 1;
+  /* number of lines to show */
+  line-clamp: 1;
+  -webkit-box-orient: vertical;
+}
+
+/* Show second line on smaller screens */
+@media only screen and (max-width: 576px) {
+  .user-working-preview {
+    -webkit-line-clamp: 2;
+    line-clamp: 2;
+  }
 }
 
 .conversation-body {
@@ -260,7 +278,7 @@ label.btn {
   padding: .5rem;
 }
 
-p > a {
+p>a {
   text-decoration: none;
 }
 
@@ -279,4 +297,28 @@ p > a {
   gap: 1rem;
   max-width: 280px;
   margin: 0 auto;
+}
+
+.profile-div-wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: .5rem;
+  max-width: 20rem;
+  margin: 0 auto;
+  align-items: center;
+  text-align: center;
+  padding: 5rem 0;
+}
+
+.modal-footer {
+  border-top: 0px;
+}
+
+.icon-box {
+  width: 100px;
+  height: 100px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 9999px;
 }
