@@ -51,8 +51,11 @@ from app.services.queries import (
 @main_bp.route("/profiles")
 def user_list():
     # Get all users
-    users = db.session.execute(select(User).filter_by(is_completed=True)).scalars().all()
-    print(users)
+    users = (
+        db.session.execute(select(User).filter_by(is_completed=True)).scalars().all()
+    )
+    
+
     return render_template("users/profiles.html", users=users)
 
 
@@ -63,7 +66,7 @@ def user_profile(username):
     is_friends = user.is_friends(session["user_id"])
 
     # If user is neither friend nor have a public account don't display posts
-    if not user.is_public and not is_friends:
+    if user.is_private and not is_friends:
         return render_template(
             "users/profile/index.html", user=user, posts=[], can_view=False
         )
@@ -87,7 +90,7 @@ def user_profile_friends(username):
     user = get_user_by_username(username)
     is_friends = user.is_friends(session["user_id"])
 
-    if not user.is_public and not is_friends:
+    if user.is_private and not is_friends:
         return render_template(
             "users/profile/friends.html", user=user, friends=[], can_view=False
         )
@@ -106,7 +109,7 @@ def user_profile_groups(username):
     user = db.first_or_404(db.select(User).filter_by(username=username))
     is_friends = user.is_friends(session["user_id"])
 
-    if not user.is_public and not is_friends:
+    if user.is_private and not is_friends:
         return render_template(
             "users/profile/groups.html", user=user, groups=[], can_view=False
         )
@@ -148,6 +151,7 @@ def general_settings():
     name = request.form["name"]
     surname = request.form["surname"]
     email = request.form["email"]
+    is_private = request.form["is_private"]
 
     # Get user
     current_user = db.get_or_404(User, session["user_id"])
@@ -167,6 +171,12 @@ def general_settings():
         current_user.surname = surname
     if email and email != current_user.email:
         current_user.email = email
+        
+    # Set user's account private / public
+    if is_private:
+        current_user.is_private = True
+    else:
+        current_user.is_private = False
 
     if image.filename:
         if not allowed_file(image.filename):

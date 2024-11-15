@@ -71,7 +71,7 @@ main %}
 		<div class="tab-content">
 			<div class="tab-pane fade active show" id="account-general">
 				<form
-					action="/settings/general"
+					action="{{ url_for('main.general_settings') }}"
 					method="post"
 					enctype="multipart/form-data">
 					<div
@@ -139,7 +139,32 @@ main %}
 								name="email"
 								value="{{ user.email }}" />
 						</div>
+
+						<div class="form-group mb-3">
+							<label class="form-label">Account Privacy</label>
+							<div class="form-check form-switch">
+								<input
+									class="form-check-input"
+									type="checkbox"
+									id="privacySwitch"
+									name="is_private"
+									{%
+									if
+									user.is_private
+									%}checked{%
+									endif
+									%} />
+								<label
+									id="privacySwitchLabel"
+									class="form-check-label"
+									for="privacySwitch">
+									{{ "Private" if user.is_private else
+									"Public" }}
+								</label>
+							</div>
+						</div>
 					</div>
+
 					<div class="text-end mt-3">
 						<button type="submit" class="btn btn-primary">
 							Save changes
@@ -205,7 +230,7 @@ main %}
 							name="about-me"
 							aria-label="About me"
 							placeholder="I’m Tony Stark—genius, billionaire, playboy, philanthropist. I build things—big things. I revolutionize industries, create tech no one else can dream of, and save the world from time to time in a suit of high-tech armor I designed. Some call me Iron Man, but really, I’m just a guy trying to make sure tomorrow is better than today. Sure, I’ve got a bit of an ego, but when you’re the best at what you do, it’s hard not to. Bottom line? I believe in using my brain and my resources to change the world—one invention at a time.">
-							{{ user.about }}</textarea
+{{ user.about }}</textarea
 						>
 					</div>
 					<div class="mb-3">
@@ -677,6 +702,18 @@ main %}
 			deleteBtn.addEventListener("click", function () {
 				container.removeChild(inputGroup);
 			});
+		});
+
+	// Update privacy text on checked / unchecked
+	document
+		.getElementById("privacySwitch")
+		.addEventListener("change", function () {
+			const label = document.getElementById("privacySwitchLabel");
+			if (this.checked) {
+				label.textContent = "Private";
+			} else {
+				label.textContent = "Public";
+			}
 		});
 </script>
 {% endblock %}

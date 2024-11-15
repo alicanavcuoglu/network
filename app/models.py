@@ -63,7 +63,7 @@ class User(db.Model):
     classes: Mapped[str] = mapped_column(Text, nullable=True)
     links: Mapped[str] = mapped_column(Text, nullable=True)
     is_completed: Mapped[bool] = mapped_column(Boolean, default=False)
-    is_public: Mapped[bool] = mapped_column(Boolean, default=True)
+    is_private: Mapped[bool] = mapped_column(Boolean, default=False)
 
     # Many-to-Many relationship for friends
     friends: Mapped[List["User"]] = relationship(

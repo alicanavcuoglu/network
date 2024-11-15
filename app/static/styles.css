@@ -101,7 +101,6 @@ label.btn {
   border: 1px solid #ddd;
   border-radius: 5px;
   padding: 1rem;
-  margin-bottom: 1rem;
   background-color: #f9f9f9;
 }
 
@@ -252,6 +251,7 @@ label.btn {
 
 .notification-text {
   display: -webkit-box;
+  line-clamp: 2;
   -webkit-line-clamp: 2;
   /* Limit to 2 lines */
   -webkit-box-orient: vertical;
@@ -321,4 +321,11 @@ p>a {
   align-items: center;
   justify-content: center;
   border-radius: 9999px;
+}
+
+.posts-wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: .5rem;
+  margin-top: .5rem;
 }

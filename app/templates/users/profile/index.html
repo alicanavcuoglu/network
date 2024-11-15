@@ -34,8 +34,12 @@ from 'components/user_cover.html' import cover %} {% block title %} {{ user.name
 
 	<!-- Tab -->
 	<div class="py-4">
-		{% if can_view %} {% if posts|length > 0 %} {% for post in posts %}
-		{{postings.post(post, current_user)}} {% endfor %} {% else %}
+		{% if can_view %}
+		<div class="posts-wrapper">
+			{% if posts|length > 0 %} {% for post in posts %}
+			{{postings.post(post, current_user)}} {% endfor %}
+		</div>
+		{% else %}
 		<div class="profile-div-wrapper">
 			<div class="icon-box border">
 				<i class="fa-solid fa-comments fs-1 text-muted"></i>
