@@ -76,6 +76,11 @@ main %}
 					enctype="multipart/form-data">
 					<div
 						class="d-flex flex-column flex-sm-row gap-4 align-items-center">
+						<input
+							type="hidden"
+							name="delete_image"
+							id="delete_image"
+							value="false" />
 						<img
 							id="imagePreview"
 							src="{{ user.image if user.image else url_for('static', filename='placeholder.jpg')}}"
@@ -90,6 +95,7 @@ main %}
 										id="imageInput"
 										name="image"
 										type="file"
+										value="{{ user.image }}"
 										class="account-settings-fileinput"
 										accept="image/*" />
 								</label>
@@ -653,6 +659,7 @@ main %}
 
 	resetBtn.addEventListener("click", () => {
 		imagePreview.src = "/static/placeholder.jpg";
+		document.getElementById("delete_image").value = "true";
 	});
 
 	// Get the container with existing links

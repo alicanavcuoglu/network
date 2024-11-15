@@ -54,7 +54,6 @@ def user_list():
     users = (
         db.session.execute(select(User).filter_by(is_completed=True)).scalars().all()
     )
-    
 
     return render_template("users/profiles.html", users=users)
 
@@ -152,6 +151,7 @@ def general_settings():
     surname = request.form["surname"]
     email = request.form["email"]
     is_private = request.form["is_private"]
+    delete_image = True if request.form["delete_image"] == "true" else False
 
     # Get user
     current_user = db.get_or_404(User, session["user_id"])
@@ -164,6 +164,7 @@ def general_settings():
                 "This email is already in use. Please use a different email.", "error"
             )
             return redirect(url_for("main.settings"))
+        current_user.email = email
 
     if name and name != current_user.name:
         current_user.name = name
@@ -171,7 +172,7 @@ def general_settings():
         current_user.surname = surname
     if email and email != current_user.email:
         current_user.email = email
-        
+
     # Set user's account private / public
     if is_private:
         current_user.is_private = True
@@ -185,7 +186,7 @@ def general_settings():
         image_path = upload_file_to_s3(image)
         current_user.image = image_path
 
-    if current_user.image and not image.filename:
+    elif current_user.image and delete_image and not image.filename:
         delete_file_from_s3(current_user.image)
         current_user.image = None
 
