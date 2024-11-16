@@ -11,14 +11,8 @@ from flask import (
 from sqlalchemy import select
 from werkzeug.security import check_password_hash, generate_password_hash
 
+from app.events import connected_users
 from app.extensions import db
-from app.utils.helpers import (
-    allowed_file,
-    array_to_str,
-    delete_file_from_s3,
-    format_time_ago,
-    upload_file_to_s3,
-)
 from app.models import (
     Comment,
     Like,
@@ -45,6 +39,13 @@ from app.services.queries import (
     get_latest_conversations,
     get_posts,
     get_user_by_username,
+)
+from app.utils.helpers import (
+    allowed_file,
+    array_to_str,
+    delete_file_from_s3,
+    format_time_ago,
+    upload_file_to_s3,
 )
 
 
@@ -685,13 +686,14 @@ def accept_friend_request(username):
     # Remove pending/received requests
     current_user.received_requests.remove(target_user)
     target_user.pending_requests.remove(current_user)
-
     # Send a notification
     notification = create_notification(
         recipient_id=target_user.id,
         sender_id=current_user.id,
         notification_type=NotificationEnum.FRIEND_ACCEPTED,
     )
+    # Before emitting
+    db.session.flush()
 
     # Emit notification with SocketIO
     emit_notification(notification)
@@ -928,7 +930,6 @@ def notifications():
 def all_unread_notifications():
     current_user = db.get_or_404(User, session["user_id"])
     notifications = get_all_unread_notifications(current_user.id)
-    print(notifications)
 
     return render_template("notifications_unread.html", notifications=notifications)
 

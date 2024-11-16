@@ -66,8 +66,7 @@
 						<!-- Brand -->
 						<a class="navbar-brand" href="/">Network50</a>
 
-						{% if g.user %}
-						{% if g.user.is_completed %}
+						{% if g.user %} {% if g.user.is_completed %}
 						<!-- Desktop Navigation -->
 						<div
 							class="collapse navbar-collapse d-none d-md-block me-auto"
@@ -134,7 +133,73 @@
 									class="dropdown-menu dropdown-menu-end"
 									onclick="event.stopPropagation()"
 									aria-labelledby="notificationsDropdown">
-									<!-- Notifications content remains the same -->
+									<li
+										class="d-flex align-items-center justify-content-between">
+										<h6
+											class="dropdown-header notification-header fs-6">
+											Notifications
+										</h6>
+										<button
+											class="btn btn-link text-muted dropdown-header notification-header"
+											onclick="markAllRead()">
+											Mark all as read
+										</button>
+									</li>
+									{% if g.unread_notifications %} {% for
+									notification in g.unread_notifications %}
+									<li
+										id="{{notification.id}}"
+										data-notification="{{notification.id}}">
+										<a
+											class="dropdown-item notification-item {{ 'unread' if not notification.is_read else '' }}"
+											href="{{ notification | notification_link }}"
+											onclick="markAsRead('{{notification.id}}', false)">
+											<img
+												src="{{ notification.sender.image if notification.sender.image else url_for('static', filename='placeholder.jpg') }}"
+												alt="{{ notification.sender.name }}"
+												class="avatar xs" />
+											<div>
+												<span class="notification-text">
+													{{ notification |
+													notification_message }}
+												</span>
+												<span
+													class="text-muted text-xs fw-light lh-1"
+													data-bs-toggle="tooltip"
+													data-bs-placement="bottom"
+													title="{{notification.created_at}}"
+													>{{ notification.created_at
+													| time_ago }}</span
+												>
+												<button
+													class="border-0 p-0 position-absolute top-50 end-0 translate-middle-y me-2 text-black bg-transparent"
+													data-bs-toggle="tooltip"
+													data-bs-placement="bottom"
+													title="Mark as read"
+													onclick="markAsRead('{{notification.id}}')">
+													<i
+														class="fa-regular fa-circle"
+														onmouseenter="this.className='fa-solid fa-circle'"
+														onmouseleave="this.className='fa-regular fa-circle'"></i>
+												</button>
+											</div>
+										</a>
+									</li>
+									{% endfor %} {% else %}
+									<li
+										class="d-flex align-items-center justify-content-center py-5">
+										<h6 class="fw-normal text-muted small">
+											No unread notifications.
+										</h6>
+									</li>
+									{% endif %}
+									<hr
+										class="dropdown-divider notification-divider" />
+									<a
+										class="dropdown-header notification-header text-center"
+										href="/notifications"
+										>All notifications</a
+									>
 								</ul>
 							</div>
 							{% endif %}
@@ -308,5 +373,8 @@
 
 		<!-- All functions related to notifications, messages, socketIO -->
 		<script src="{{ url_for('static', filename='js/notifications.js') }}"></script>
+
+		<!-- User actions -->
+		 <script src="{{ url_for('static', filename='js/userActions.js')}}"></script>
 	</body>
 </html>
