@@ -3,10 +3,16 @@ body {
   box-sizing: border-box;
 }
 
-html,
-body,
-* {
+*,
+h1,
+h2,
+h3,
+h4,
+h5,
+h6,
+p {
   margin: 0;
+  padding: 0;
 }
 
 .account-settings-links .list-group-item {
@@ -107,8 +113,8 @@ label.btn {
 .parent-post {
   border: 1px solid #ddd;
   border-radius: 5px;
-  padding: 15px;
-  margin: 15px 0;
+  padding: 1rem;
+  margin: 1rem 0;
   background-color: white;
 }
 
@@ -120,10 +126,6 @@ label.btn {
   display: flex;
   gap: 0.5rem;
   align-items: start;
-}
-
-.comment-box {
-  margin-top: 10px;
 }
 
 .comment-span {
@@ -214,6 +216,10 @@ label.btn {
   .user-working-preview {
     -webkit-line-clamp: 2;
     line-clamp: 2;
+  }
+
+  .card-body {
+    padding: 1rem .5rem;
   }
 }
 
@@ -328,4 +334,9 @@ p>a {
   flex-direction: column;
   gap: .5rem;
   margin-top: .5rem;
+}
+
+.btn {
+  flex-shrink: 0;
+  white-space: nowrap;
 }

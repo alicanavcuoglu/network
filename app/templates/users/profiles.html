@@ -19,6 +19,20 @@
 
 <!-- PROFILES -->
 <ul class="list-group">
-	{% for user in users %} {{ card(user, current_user )}} {% endfor %}
+	{% if users %} {% for user in users %} {{ card(user, current_user )}} {%
+	endfor %} {% else %}
+	<div class="profile-div-wrapper">
+		<h3>No friends yet</h3>
+		<p class="mb-2 text-secondary">
+			You haven’t added any friends yet. Start connecting with others to
+			see your friends list grow!
+		</p>
+		<a
+			href="{{ url_for('main.user_list') }}"
+			class="btn btn-primary w-100"
+			>Add Friends</a
+		>
+	</div>
+	{% endif %}
 </ul>
 {% endblock %}

@@ -73,7 +73,7 @@ def register():
 def complete_profile():
     current_user = db.get_or_404(User, session["user_id"])
     if current_user.is_completed:
-        return redirect(url_for("main.index"))
+        return redirect(url_for("main.feed"))
 
     if request.method == "POST":
         # Ensure user exists
@@ -115,7 +115,7 @@ def complete_profile():
         try:
             db.session.commit()
             flash("Successfully created an account.", "success")
-            return redirect(url_for("main.index"))
+            return redirect(url_for("main.feed"))
         except:
             db.session.rollback()
             flash("Something went wrong, try again.", "error")
@@ -144,7 +144,7 @@ def login():
         session["user_id"] = user.id
 
         # Redirect user to home page
-        return redirect(url_for("main.index"))
+        return redirect(url_for("main.feed"))
 
     # User reached route via GET (as by clicking a link or via redirect)
     else:
@@ -159,7 +159,7 @@ def logout():
     session.clear()
 
     # Redirect user to login form
-    return redirect(url_for("main.index"))
+    return redirect(url_for("main.feed"))
 
 
 # # Email confirmation from https://www.freecodecamp.org/news/setup-email-verification-in-flask-app/
@@ -168,7 +168,7 @@ def logout():
 #     current_user = User.query.get(session["user_id"])
 #     if current_user.is_confirmed:
 #         flash("Account already confirmed.", "success")
-#         return redirect(url_for("main.index"))
+#         return redirect(url_for("main.feed"))
 #     email = confirm_token(token)
 #     user = User.query.filter_by(email=current_user.email).first_or_404()
 #     if user.email == email:
@@ -179,4 +179,4 @@ def logout():
 #         flash("You have confirmed your account. Thanks!", "success")
 #     else:
 #         flash("The confirmation link is invalid or has expired.", "error")
-#     return redirect(url_for("main.index"))
+#     return redirect(url_for("main.feed"))

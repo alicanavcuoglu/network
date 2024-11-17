@@ -20,6 +20,8 @@ from sqlalchemy.sql import func
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 import enum
 
+from app.utils.time_utils import format_message_time
+
 
 # Association table for friends
 friends_table = Table(
@@ -234,6 +236,21 @@ class Message(db.Model):
 
     def __repr__(self):
         return f"<Message {self.id} from {self.sender_id} to {self.recipient_id}>"
+
+    def to_dict(self):
+        """Convert message to dictionary for JSON serialization"""
+        return {
+            "content": self.content,
+            "sender_id": self.sender_id,
+            "sender": {
+                "image": self.sender.image,
+                "name": self.sender.name,
+                "surname": self.sender.surname,
+            },
+            "recipient_id": self.recipient_id,
+            "created_at": format_message_time(self.created_at),
+            "created_at_iso": self.created_at.strftime("%Y-%m-%d %H:%M:%S"),
+        }
 
 
 # Notification Enum

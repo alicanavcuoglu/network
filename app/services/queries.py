@@ -7,9 +7,13 @@ from app.models import Message, Post, User
 
 # Friends of user
 def get_friends(user_id):
-    user = db.get_or_404(User, user_id)
+    friends = (
+        db.session.execute(select(User).filter(User.friends.any(id=user_id)))
+        .scalars()
+        .all()
+    )
 
-    return user.friends
+    return friends
 
 
 # Errors fixed by ChatGPT

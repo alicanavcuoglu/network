@@ -11,7 +11,7 @@
 					src="{{ friend.image if friend.image else url_for('static', filename='placeholder.jpg')}}"
 					alt="{{ friend.username }}"
 					class="avatar sm margin-t-2" />
-				<h2 class="fs-6 mb-0">
+				<h2 class="fs-6 ">
 					{{ friend.name }} {{ friend.surname }}
 				</h2>
 			</a>
@@ -37,7 +37,7 @@
 						alt="{{ sender.username }}"
 						class="avatar sm" />
 					<div>
-						<p class="small p-2 mb-0 rounded-3 bg-body-tertiary">
+						<p class="small p-2  rounded-3 bg-body-tertiary">
 							{{ message.content }}
 						</p>
 						<span
@@ -45,7 +45,7 @@
 							data-bs-toggle="tooltip"
 							data-bs-placement="bottom"
 							title="{{message.created_at}}"
-							>{{ message.created_at | time_ago }}</span
+							>{{ message.created_at | message_time }}</span
 						>
 					</div>
 				</div>
@@ -164,7 +164,7 @@
 				messageData.sender.surname
 			}" class="avatar sm" />
 			<div>
-				<p class="small p-2 mb-0 rounded-3 bg-body-tertiary">${messageData.content}</p>
+				<p class="small p-2  rounded-3 bg-body-tertiary">${messageData.content}</p>
 				<span class="text-muted text-xs fw-light ${
 					messageData.sender.id == currentUserId
 						? "float-end"

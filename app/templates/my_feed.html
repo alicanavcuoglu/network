@@ -4,18 +4,21 @@ block title %} Homepage {% endblock %} {% block main %}
 <!-- TABS -->
 <div
 	class="list-group d-flex flex-row text-center overflow-x-auto bg-light list-group-flush account-settings-links border-bottom mb-3">
-	<a href="/" class="list-group-item list-group-item-action active"
-		>For You</a
+	<a
+		href="{{ url_for('main.feed') }}"
+		class="list-group-item list-group-item-action"
+		>Community</a
 	>
-	<a href="/friends" class="list-group-item list-group-item-action"
-		>Friends</a
+	<a
+		href="{{ url_for('main.my_feed') }}"
+		class="list-group-item list-group-item-action active"
+		>My Feed</a
 	>
 </div>
 
 {{ postings.create_post(current_user) }}
 <div class="posts-wrapper">
-	{% for post in posts %} {{
- postings.post(post, current_user) }} {% endfor %}
+	{% for post in posts %} {{ postings.post(post, current_user) }} {% endfor %}
 </div>
 
 <script>

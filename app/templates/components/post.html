@@ -41,7 +41,7 @@
 				<a
 					href="/profiles/{{ post.user.username }}"
 					class="text-decoration-none text-secondary-emphasis fw-medium">
-					<h4 class="mb-0 fs-6">
+					<h4 class=" fs-6">
 						{{ post.user.name }} {{ post.user.surname }}
 					</h4>
 				</a>
@@ -86,7 +86,7 @@
 						<a
 							href="/profiles/{{ post.original_post.user.username }}"
 							class="text-decoration-none text-secondary-emphasis fw-medium">
-							<h4 class="mb-0 fs-6">
+							<h4 class=" fs-6">
 								{{ post.original_post.user.name }} {{
 								post.original_post.user.surname }}
 							</h4>
@@ -158,7 +158,7 @@
 	</div>
 	<!-- Comments Section -->
 	<div class="comments-section">
-		<h6>Comments:</h6>
+		<h6 >Comments:</h6>
 		<div class="comments d-flex flex-column gap-3">
 			{% for comment in post.latest_comments() %}
 			<div
@@ -227,7 +227,7 @@
 			Load more comments
 		</button>
 		{% endif %}
-		<div class="comment-box">
+		<div class="mt-2">
 			<input
 				type="text"
 				class="form-control comment-input"

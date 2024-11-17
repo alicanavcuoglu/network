@@ -1,10 +1,7 @@
-{% extends "layout.html" %}
-
-{% block title %}File is too large{% endblock %}
-
-{% block main %}
-  <div class="text-center py-5">
-    <h1>File is too large!</h1>
-    <p>Please upload a file smaller than 1MB.</p>
-  </div>
+{% extends "layout.html" %} {% block title %}File is too large{% endblock %} {%
+block main %}
+<div class="text-center py-5 d-flex flex-column gap-3 align-items-center">
+	<h1>File is too large!</h1>
+	<p>Please upload a file smaller than 1MB.</p>
+</div>
 {% endblock %}

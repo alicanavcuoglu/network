@@ -11,7 +11,6 @@ from flask import (
 from sqlalchemy import select
 from werkzeug.security import check_password_hash, generate_password_hash
 
-from app.events import connected_users
 from app.extensions import db
 from app.models import (
     Comment,
@@ -37,16 +36,15 @@ from app.services.queries import (
     get_friends,
     get_groups,
     get_latest_conversations,
-    get_posts,
     get_user_by_username,
 )
 from app.utils.helpers import (
     allowed_file,
     array_to_str,
     delete_file_from_s3,
-    format_time_ago,
     upload_file_to_s3,
 )
+from app.utils.time_utils import format_time_ago
 
 
 @main_bp.route("/profiles")
@@ -142,7 +140,7 @@ def user_delete(id):
     db.session.delete(user)
     db.session.commit()
     session.clear()
-    return redirect(url_for("main.index"))
+    return redirect(url_for("main.feed"))
 
 
 @main_bp.route("/settings/general", methods=["POST"])
@@ -313,20 +311,22 @@ def links_settings():
 """ POSTS """
 
 
+    
 # Feed
 @main_bp.route("/")
-def index():
+def feed():
     posts = Post.query.order_by(Post.created_at.desc()).all()
 
-    return render_template("index.html", posts=posts)
-
+    return render_template("feed.html", posts=posts)
 
 # Friends feed
-@main_bp.route("/friends")
-def friends():
+@main_bp.route("/my-feed")
+def my_feed():
     # TODO: Display posts from friends of the user
     posts = Post.query.all()
-    return render_template("friends.html", posts=posts)
+    return render_template("my_feed.html", posts=posts)
+
+
 
 
 # Post page
@@ -343,7 +343,7 @@ def create_post():
     post = Post(content=content, user_id=session["user_id"])
     db.session.add(post)
     db.session.commit()
-    return redirect(url_for("main.index"))
+    return redirect(url_for("main.feed"))
 
 
 # Reshare post
@@ -374,7 +374,7 @@ def reshare_post(id):
         # Emit notification with SocketIO
         emit_notification(notification)
 
-    return redirect(url_for("main.index"))
+    return redirect(url_for("main.feed"))
 
 
 # Delete post
@@ -573,7 +573,11 @@ def load_more_comments(id):
 
 
 """ FRIENDS """
-
+@main_bp.route("/friends")
+def friends():
+    friends = get_friends(session["user_id"])
+    
+    return render_template("users/profiles.html", users=friends)
 
 # Requests
 @main_bp.route("/friends/requests")
@@ -763,25 +767,6 @@ def remove_friend(username):
 
 """ MESSAGES """
 
-
-# Start a new conversation
-@main_bp.route("/messages/new")
-def start_conversation():
-    friends_data = get_friends(session["user_id"])
-    friends = []
-    for friend_data in friends_data:
-        friend_json = {
-            "id": friend_data.id,
-            "username": friend_data.username,
-            "name": friend_data.name,
-            "surname": friend_data.surname,
-            "image": friend_data.image,
-        }
-        friends.append(friend_json)
-
-    return render_template("messages/create_message.html", friends=friends)
-
-
 # Messages page
 @main_bp.route("/messages")
 def view_messages():
@@ -792,8 +777,8 @@ def view_messages():
 
 
 # Single message page
-@main_bp.route("/messages/<username>")
-def view_conversation(username):
+@main_bp.route("/messages/<username>", methods=["GET", "POST"])
+def conversation(username):
     # Get current user and friend
     current_user = db.get_or_404(User, session["user_id"])
     friend = User.query.filter_by(username=username).first_or_404()
@@ -802,38 +787,40 @@ def view_conversation(username):
         flash("You can't chat with yourself!", "error")
         return redirect(url_for("main.view_messages"))
 
-    # Limit the initial number of messages to load, for example, the latest 20
-    message_limit = 20
+    if request.method == "POST":
+        ...
+        # Create message
 
-    # Fetch initial messages between current user and friend
-    messages = (
-        Message.query.filter(
-            (
-                (Message.sender_id == current_user.id)
-                & (Message.recipient_id == friend.id)
+    else:
+        # Limit the initial number of messages to load, for example, the latest 20
+        message_limit = 20
+
+        # Fetch initial messages between current user and friend
+        messages = (
+            Message.query.filter(
+                (
+                    (Message.sender_id == current_user.id)
+                    & (Message.recipient_id == friend.id)
+                )
+                | (
+                    (Message.sender_id == friend.id)
+                    & (Message.recipient_id == current_user.id)
+                )
             )
-            | (
-                (Message.sender_id == friend.id)
-                & (Message.recipient_id == current_user.id)
-            )
+            .order_by(Message.created_at.desc())
+            .limit(message_limit)
+            .all()
         )
-        .order_by(Message.created_at.desc())
-        .limit(message_limit)
-        .all()
-    )
 
-    # Reverse to show from oldest to newest after limiting
-    messages.reverse()
+        # Reverse to show from oldest to newest after limiting
+        messages.reverse()
 
-    if messages:
         return render_template(
             "messages/conversation.html",
             messages=messages,
             friend=friend,
             has_more=len(messages) == message_limit,
         )
-    else:
-        return abort(404)
 
 
 # Load more messages

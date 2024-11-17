@@ -1,7 +1,7 @@
 from flask import request, session, url_for
 from flask_socketio import emit
 
-from app.utils.helpers import format_time_ago
+from app.utils.time_utils import format_time_ago
 from app.models import db, Message, User
 
 connected_users = {}
@@ -41,15 +41,6 @@ def init_socketio(socketio):
             db.session.add(message)
             db.session.commit()
 
-            if isFirstMessage:
-                # Emit success back to the sender with the chat page URL if it's first message
-                emit(
-                    "first_message_sent",
-                    {
-                        "success": True,
-                        "chat_url": url_for("main.view_conversation", username=username),
-                    },
-                )
 
             message_data = {
                 "content": message.content,

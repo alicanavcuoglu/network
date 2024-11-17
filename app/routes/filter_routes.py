@@ -4,10 +4,9 @@ from app.routes import filters_bp
 from app.utils.helpers import (
     create_notification_link,
     create_notification_message,
-    format_message_time,
-    format_time_ago,
     process_text,
 )
+from app.utils.time_utils import format_message_time, format_time_ago
 
 
 @filters_bp.app_template_filter("time_ago")

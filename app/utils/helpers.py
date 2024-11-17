@@ -1,7 +1,7 @@
 import imghdr
 import os
 import re
-from datetime import datetime, timedelta
+from datetime import datetime
 from functools import wraps
 from urllib.parse import urlparse
 
@@ -29,7 +29,7 @@ def logout_required(func):
     def decorated_function(*args, **kwargs):
         if session.get("user_id"):
             flash("You are already authenticated.", "info")
-            return redirect(url_for("main.index"))
+            return redirect(url_for("main.feed"))
         return func(*args, **kwargs)
 
     return decorated_function
@@ -74,58 +74,6 @@ def validate_image(stream):
         return None
     return "." + (format if format != "jpeg" else "jpg")
 
-
-# By ChatGPT
-def format_time_ago(dt: datetime):
-    now = datetime.utcnow()
-    diff = now - dt
-
-    # Display minutes ago if less than 1 hours
-    if diff < timedelta(minutes=60):
-        minutes = diff.seconds // 60
-        return f"{minutes}m" if minutes > 1 else "just now"
-
-    # Display hours ago if less than 24 hours
-    elif diff < timedelta(hours=24):
-        hours = diff.seconds // 3600
-        return f"{hours}h"
-
-    # Display days ago if within the last 7 days
-    elif diff < timedelta(days=7):
-        days = diff.days
-        return f"{days}d"
-
-    # Display as mm-dd-yyyy if older than 7 days
-    else:
-        return dt.strftime("%m-%d-%Y")
-
-
-def format_message_time(dt: datetime):
-    now = datetime.utcnow()
-    diff = now - dt
-
-    # Display minutes ago if less than 1 hours
-    if diff < timedelta(minutes=60):
-        minutes = diff.seconds // 60
-        return f"{minutes} mins ago" if minutes > 1 else "Just now"
-
-    # Display hours ago if less than 24 hours
-    elif diff < timedelta(hours=24):
-        hours = diff.seconds // 3600
-        return f"{hours} hours ago"
-
-    # Display days ago if within the last 7 days
-    elif diff < timedelta(days=7):
-        days = diff.days
-        return f"{days} days ago" if days > 1 else "Yesterday"
-
-    # Display as 'Month Day'
-    elif diff < timedelta(days=365):
-        return dt.strftime("%b %d")
-
-    # Display as mm-dd-yyyy if older than 7 days
-    else:
-        return dt.strftime("%b %d, %Y")
 
 
 def create_notification_message(notification):
