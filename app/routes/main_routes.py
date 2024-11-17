@@ -22,7 +22,8 @@ from app.models import (
     User,
 )
 from app.routes import main_bp
-from app.routes.error_routes import not_found, unauthorized
+from app.routes.error_routes import unauthorized
+from app.services.messages import create_message, emit_message
 from app.services.notifications import (
     create_notification,
     emit_notification,
@@ -311,7 +312,6 @@ def links_settings():
 """ POSTS """
 
 
-    
 # Feed
 @main_bp.route("/")
 def feed():
@@ -319,14 +319,13 @@ def feed():
 
     return render_template("feed.html", posts=posts)
 
+
 # Friends feed
 @main_bp.route("/my-feed")
 def my_feed():
     # TODO: Display posts from friends of the user
     posts = Post.query.all()
     return render_template("my_feed.html", posts=posts)
-
-
 
 
 # Post page
@@ -573,11 +572,14 @@ def load_more_comments(id):
 
 
 """ FRIENDS """
+
+
 @main_bp.route("/friends")
 def friends():
     friends = get_friends(session["user_id"])
-    
+
     return render_template("users/profiles.html", users=friends)
+
 
 # Requests
 @main_bp.route("/friends/requests")
@@ -767,6 +769,7 @@ def remove_friend(username):
 
 """ MESSAGES """
 
+
 # Messages page
 @main_bp.route("/messages")
 def view_messages():
@@ -788,8 +791,21 @@ def conversation(username):
         return redirect(url_for("main.view_messages"))
 
     if request.method == "POST":
-        ...
+        # Get message from JS fetch request
+        content = request.json
+
         # Create message
+        message = create_message(
+            sender_id=current_user.id, recipient_id=friend.id, content=content
+        )
+        
+        # Commit
+        db.session.commit()
+
+        # Emit message
+        emit_message(message)
+        
+        return message.to_dict(), 200
 
     else:
         # Limit the initial number of messages to load, for example, the latest 20

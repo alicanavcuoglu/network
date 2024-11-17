@@ -64,10 +64,9 @@ main %}
 		// Socket initialization if not initialized
 		if (typeof socket === "undefined") {
 			socket = io(); // Initialize socket if it's not defined
-			console.log("Socket initialized");
 		}
 
-		socket.on("receive_message", function (data) {
+		socket.on("message", function (data) {
 			// Find the message container for this user
 			const messageContainer = document.querySelector(
 				`#message-${data.sender_id}`

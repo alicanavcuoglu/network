@@ -18,23 +18,14 @@ $(function () {
 	$('[data-bs-toggle="popover"]').popover();
 });
 
-// Remove notification badge from 'Messages' link when there are no more unread messages
-socket.on("no_unread_messages", function () {
-	const unreadBadge = document.getElementById("unread-badge");
-	if (unreadBadge) {
-		unreadBadge.style.display = "none";
-	}
-});
 
 // Create notification badge for 'Messages' link when there are new messages
-socket.on("new_unread_message", function () {
+socket.on("message", function () {
 	const unreadBadge = document.getElementById("unread-badge");
 
 	if (unreadBadge) return;
 
-	const unreadBadgeWrapper = document.getElementById(
-		"unread-badge-wrapper"
-	);
+	const unreadBadgeWrapper = document.getElementById("unread-badge-wrapper");
 
 	const newBadge = document.createElement("div");
 	newBadge.innerHTML = `
@@ -64,8 +55,7 @@ socket.on("notification", function (notification) {
 		showNotificationBadge();
 
 		// Add to dropdown menu
-		const dropdownMenu =
-			document.getElementById("dropdown-menu");
+		const dropdownMenu = document.getElementById("dropdown-menu");
 
 		// Remove "No unread notifications" message if present
 		const noUnreadMessage = dropdownMenu.querySelector(
@@ -78,10 +68,7 @@ socket.on("notification", function (notification) {
 		const newNotification = createNotification(notification);
 
 		// Insert the new notification
-		dropdownMenu.insertBefore(
-			newNotification,
-			dropdownMenu.children[1]
-		);
+		dropdownMenu.insertBefore(newNotification, dropdownMenu.children[1]);
 
 		// Add notification ID to displayedNotifications
 		displayedNotifications.push(notification.id);
@@ -90,9 +77,7 @@ socket.on("notification", function (notification) {
 
 // Display badge
 function showNotificationBadge() {
-	const parentBtn = document.getElementById(
-		"notificationsDropdown"
-	);
+	const parentBtn = document.getElementById("notificationsDropdown");
 	if (!parentBtn.querySelector(".bg-danger")) {
 		const span = document.createElement("span");
 		span.className =
@@ -103,20 +88,16 @@ function showNotificationBadge() {
 }
 
 function hideNotificationBadge() {
-	const parentBtn = document.getElementById(
-		"notificationsDropdown"
-	);
+	const parentBtn = document.getElementById("notificationsDropdown");
 	const badge = parentBtn.querySelector("span");
 	if (badge) badge.remove();
 }
 
 function updateReadStatus() {
-	document
-		.querySelectorAll(".notification-item")
-		.forEach((link) => {
-			link.className =
-				"list-group-item notification-item p-3 border text-decoration-none";
-		});
+	document.querySelectorAll(".notification-item").forEach((link) => {
+		link.className =
+			"list-group-item notification-item p-3 border text-decoration-none";
+	});
 }
 
 // Fetch next unread notification
@@ -131,11 +112,8 @@ function fetchNextUnreadNotification() {
 		.then((response) => response.json())
 		.then((data) => {
 			if (data) {
-				const dropdownMenu =
-					document.getElementById("dropdown-menu");
-				const divider = document.querySelector(
-					".notification-divider"
-				);
+				const dropdownMenu = document.getElementById("dropdown-menu");
+				const divider = document.querySelector(".notification-divider");
 
 				const newNotification = createNotification(data);
 				dropdownMenu.insertBefore(newNotification, divider);
@@ -164,9 +142,7 @@ function markAsRead(notificationId, preventDefault = true) {
 		.then((response) => {
 			if (!response.ok) {
 				return response.json().then((error) => {
-					throw new Error(
-						error.message || "An error occurred"
-					);
+					throw new Error(error.message || "An error occurred");
 				});
 			}
 			return response.json();
@@ -177,10 +153,9 @@ function markAsRead(notificationId, preventDefault = true) {
 					document.getElementById(notificationId);
 				if (notificationElement) {
 					notificationElement.remove();
-					displayedNotifications =
-						displayedNotifications.filter(
-							(id) => id !== notificationId
-						);
+					displayedNotifications = displayedNotifications.filter(
+						(id) => id !== notificationId
+					);
 				}
 
 				// After marking a notification as read, check if there are no more
@@ -203,23 +178,22 @@ function markAsRead(notificationId, preventDefault = true) {
 function createNotification(notification) {
 	const newNotification = document.createElement("li");
 	newNotification.id = notification.id;
-	newNotification.setAttribute(
-		"data-notification",
-		notification.id
-	);
+	newNotification.setAttribute("data-notification", notification.id);
 
 	newNotification.innerHTML = `
 			<a class="dropdown-item notification-item unread" href="${createNotificationLink(
-		notification
-	)}">
-				<img src="${notification.sender_image || "/static/placeholder.jpg"}" alt="${notification.sender_name
-		}" class="avatar xs" />
+				notification
+			)}">
+				<img src="${notification.sender_image || "/static/placeholder.jpg"}" alt="${
+		notification.sender_name
+	}" class="avatar xs" />
 				<div>
 					<span class="notification-text">${createNotificationMessage(
-			notification
-		)}</span>
-					<span class="text-muted text-xs fw-light lh-1" title="${notification.created_at
-		}">
+						notification
+					)}</span>
+					<span class="text-muted text-xs fw-light lh-1" title="${
+						notification.created_at
+					}">
 						${formatTimeAgo(new Date(notification.created_at))}
 					</span>
 					<button class="border-0 p-0 position-absolute top-50 end-0 translate-middle-y me-2 text-black bg-transparent"
