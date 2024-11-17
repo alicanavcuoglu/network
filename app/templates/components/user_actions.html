@@ -12,7 +12,7 @@
 		class="btn btn-outline-secondary"
 		data-bs-toggle="modal"
 		data-bs-target="#removeFriend-{{ user.username }}"
-		data-user-username="{{ user.username }}">
+		data-user-username="{{ user.username }}" onclick="event.preventDefault()">
 		<i class="fa-solid fa-trash me-1 small"></i>
 		<span class="small">Remove</span>
 	</button>

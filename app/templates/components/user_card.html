@@ -13,17 +13,15 @@ render_delete_modal %} {% macro card(user, current_user, actions = True) %}
 				class="avatar md" />
 			<div class="d-flex flex-column ms-2 mt-2px text-black gap-2">
 				<div class="d-flex flex-column">
-					<h4 class=" fs-6">
-						{{ user.name }} {{ user.surname }}
-					</h4>
+					<h4 class="fs-6">{{ user.name }} {{ user.surname }}</h4>
 					{% if user.working_on %}
-					<p class="small ">
+					<p class="small">
 						<span class="text-secondary user-working-preview">
 							{{ user.working_on}}
 						</span>
 					</p>
 					{% endif %} {% if user.location %}
-					<p class="small ">
+					<p class="small">
 						<i class="fas fa-map-marker-alt mr-2"></i>
 						<span class="text-secondary"> {{ user.location}} </span>
 					</p>

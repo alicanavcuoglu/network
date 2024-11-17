@@ -2,7 +2,7 @@
 
 // Add a user as a friend
 document.querySelectorAll(".add-btn").forEach((addBtn) => {
-	const username = addBtn;
+	const username = addBtn.getAttribute("data-user-username");
 
 	addBtn.addEventListener("click", (e) => {
 		e.preventDefault();
@@ -23,7 +23,7 @@ document.querySelectorAll(".add-btn").forEach((addBtn) => {
 
 // Accept a friendship request
 document.querySelectorAll(".accept-btn").forEach((acceptBtn) => {
-	const username = acceptBtn;
+	const username = acceptBtn.getAttribute("data-user-username");
 
 	acceptBtn.addEventListener("click", (e) => {
 		e.preventDefault();
@@ -44,7 +44,7 @@ document.querySelectorAll(".accept-btn").forEach((acceptBtn) => {
 
 // Decline a friendship request
 document.querySelectorAll(".decline-btn").forEach((declineBtn) => {
-	const username = declineBtn;
+	const username = declineBtn.getAttribute("data-user-username");
 
 	declineBtn.addEventListener("click", (e) => {
 		e.preventDefault();

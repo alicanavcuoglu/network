@@ -22,7 +22,8 @@ def create_notification(
 def emit_notification(notification):
     """Emit notification to specific user"""
     recipient_sid = connected_users.get(notification.recipient_id)
-    socketio.emit("notification", notification.to_dict(), to=recipient_sid)
+    if recipient_sid:
+        socketio.emit("notification", notification.to_dict(), to=recipient_sid)
 
 
 def get_unread_notifications(user_id):

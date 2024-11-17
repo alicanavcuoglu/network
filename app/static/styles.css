@@ -340,3 +340,7 @@ p>a {
   flex-shrink: 0;
   white-space: nowrap;
 }
+
+.fit-content {
+  max-width: fit-content;
+}

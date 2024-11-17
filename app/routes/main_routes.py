@@ -34,6 +34,7 @@ from app.services.notifications import (
     mark_as_read,
 )
 from app.services.queries import (
+    get_feed_posts,
     get_friends,
     get_groups,
     get_latest_conversations,
@@ -323,8 +324,7 @@ def feed():
 # Friends feed
 @main_bp.route("/my-feed")
 def my_feed():
-    # TODO: Display posts from friends of the user
-    posts = Post.query.all()
+    posts = get_feed_posts(session["user_id"])
     return render_template("my_feed.html", posts=posts)
 
 
@@ -642,7 +642,6 @@ def send_friend_request(username):
             Notification.is_read == False,
         ).first()
 
-        # TODO: Test if this works seamlessly
         if unread_request:
             unread_request.is_read = True
 
@@ -712,7 +711,6 @@ def accept_friend_request(username):
         Notification.is_read == False,
     ).first()
 
-    # TODO: Test if this works seamlessly
     if unread_request:
         unread_request.is_read = True
 
@@ -798,13 +796,13 @@ def conversation(username):
         message = create_message(
             sender_id=current_user.id, recipient_id=friend.id, content=content
         )
-        
+
         # Commit
         db.session.commit()
 
         # Emit message
         emit_message(message)
-        
+
         return message.to_dict(), 200
 
     else:

@@ -1,27 +1,23 @@
-from app.extensions import db
-
-from dataclasses import dataclass
-from datetime import datetime, timezone
+import enum
+from datetime import datetime
 from typing import List
 
-from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy import (
     Boolean,
     Column,
     DateTime,
     Enum,
+    ForeignKey,
     Integer,
     String,
     Table,
     Text,
-    ForeignKey,
 )
-from sqlalchemy.sql import func
 from sqlalchemy.orm import Mapped, mapped_column, relationship
-import enum
+from sqlalchemy.sql import func
 
+from app.extensions import db
 from app.utils.time_utils import format_message_time
-
 
 # Association table for friends
 friends_table = Table(

@@ -34,12 +34,14 @@
 						src="{{ sender.image if sender.image else url_for('static', filename='placeholder.jpg')}}"
 						alt="{{ sender.username }}"
 						class="avatar sm" />
-					<div>
-						<p class="small p-2 rounded-3 bg-body-tertiary">
+					<div
+						class="d-flex flex-column {{ 'align-items-end' if current_user.id==sender.id else 'align-items-start'}}">
+						<p
+							class="small p-2 rounded-3 bg-body-tertiary fit-content">
 							{{ message.content }}
 						</p>
 						<span
-							class="text-muted text-xs fw-light {{ 'float-end' if current_user.id == sender.id else 'float-start'  }}"
+							class="text-muted text-xs fw-light"
 							data-bs-toggle="tooltip"
 							data-bs-placement="bottom"
 							title="{{message.created_at}}"
@@ -95,7 +97,10 @@
 
 		// Receive message
 		socket.on("message", function (data) {
-			createNewMessage(data);
+			friendId = "{{friend.id}}";
+			if (data.sender_id == friendId) {
+				createNewMessage(data);
+			}
 		});
 
 		// Send message with button
@@ -167,15 +172,17 @@
 			<img src=${userImg} alt="${messageData.sender.name} ${
 				messageData.sender.surname
 			}" class="avatar sm" />
-			<div>
-				<p class="small p-2  rounded-3 bg-body-tertiary">${messageData.content}</p>
-				<span class="text-muted text-xs fw-light ${
-					messageData.sender_id == currentUserId
-						? "float-end"
-						: "float-none"
-				}" data-bs-toggle="tooltip" data-bs-placement="bottom" title=${
-				messageData.created_at_iso
-			}>
+			<div class="d-flex flex-column ${
+				messageData.sender_id == currentUserId
+					? "align-items-end"
+					: "align-items-start"
+			}">
+				<p class="small p-2 rounded-3 bg-body-tertiary fit-content">${
+					messageData.content
+				}</p>
+				<span class="text-muted text-xs fw-light" data-bs-toggle="tooltip" data-bs-placement="bottom" title=${
+					messageData.created_at_iso
+				}>
 					${messageData.created_at}
 				</span>
 			</div>

@@ -2,18 +2,36 @@ from flask import session
 from sqlalchemy import case, select
 
 from app.services import db
-from app.models import Message, Post, User
+from app.models import Message, Post, User, friends_table
 
 
 # Friends of user
 def get_friends(user_id):
     friends = (
-        db.session.execute(select(User).filter(User.friends.any(id=user_id)))
+        db.session.execute(
+            select(User)
+            .join(friends_table, friends_table.c.friend_id == User.id)
+            .filter(friends_table.c.user_id == user_id)
+        )
         .scalars()
         .all()
     )
 
     return friends
+
+# TODO: Include for you (boolean), posts from groups
+def get_feed_posts(user_id):
+    friends_posts = (
+        db.session.execute(
+            select(Post)
+            .join(friends_table, friends_table.c.friend_id == Post.user_id)
+            .filter(friends_table.c.user_id == user_id)
+        )
+        .scalars()
+        .all()
+    )
+
+    return friends_posts
 
 
 # Errors fixed by ChatGPT
