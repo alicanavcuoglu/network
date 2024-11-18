@@ -17,7 +17,7 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy.sql import func
 
 from app.extensions import db
-from app.utils.time_utils import format_message_time
+from app.utils.time_utils import format_message_time, format_time_ago
 
 # Association table for friends
 friends_table = Table(
@@ -133,9 +133,9 @@ class Post(db.Model):
         back_populates="post", cascade="all, delete-orphan"
     )
 
-    created_at: Mapped[datetime] = mapped_column(DateTime, default=func.now())
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=func.now())
     updated_at: Mapped[datetime] = mapped_column(
-        DateTime, default=func.now(), onupdate=func.now()
+        DateTime(timezone=True), default=func.now(), onupdate=func.now()
     )
 
     user: Mapped["User"] = relationship("User", back_populates="posts")
@@ -164,7 +164,7 @@ class Comment(db.Model):
     post_id: Mapped[int] = mapped_column(ForeignKey("post.id"), nullable=False)
 
     content: Mapped[str] = mapped_column(Text, nullable=False)
-    created_at: Mapped[datetime] = mapped_column(DateTime, default=func.now())
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=func.now())
 
     post: Mapped["Post"] = relationship(back_populates="comments")
     user: Mapped["User"] = relationship()
@@ -192,7 +192,7 @@ class Like(db.Model):
     post_id: Mapped[int] = mapped_column(ForeignKey("post.id"), nullable=True)
     comment_id: Mapped[int] = mapped_column(ForeignKey("comment.id"), nullable=True)
 
-    created_at: Mapped[datetime] = mapped_column(DateTime, default=func.now())
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=func.now())
 
     # One of post_id or comment_id must be filled
     __table_args__ = (
@@ -220,7 +220,7 @@ class Message(db.Model):
     sender_id: Mapped[int] = mapped_column(ForeignKey("user.id"), nullable=False)
     recipient_id: Mapped[int] = mapped_column(ForeignKey("user.id"), nullable=False)
     content: Mapped[str] = mapped_column(Text, nullable=False)
-    created_at: Mapped[datetime] = mapped_column(DateTime, default=func.now())
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=func.now())
     is_read: Mapped[bool] = mapped_column(Boolean, default=False)
 
     sender: Mapped["User"] = relationship(
@@ -273,7 +273,7 @@ class Notification(db.Model):
     comment_id: Mapped[int] = mapped_column(ForeignKey("comment.id"), nullable=True)
 
     is_read: Mapped[bool] = mapped_column(Boolean, default=False)
-    created_at: Mapped[datetime] = mapped_column(DateTime, default=func.now())
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=func.now())
 
     # Relationships
     recipient: Mapped["User"] = relationship(
@@ -294,7 +294,8 @@ class Notification(db.Model):
             "sender_name": f"{self.sender.name} {self.sender.surname}",
             "sender_username": self.sender.username,
             "sender_image": self.sender.image,
-            "created_at": self.created_at.isoformat(),
+            "created_at": format_time_ago(self.created_at),
+            "created_at_iso": self.created_at.isoformat(),
             "is_read": self.is_read,
             "post_id": self.post_id,
             "comment_id": self.comment_id,

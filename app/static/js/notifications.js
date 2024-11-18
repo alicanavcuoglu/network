@@ -18,7 +18,6 @@ $(function () {
 	$('[data-bs-toggle="popover"]').popover();
 });
 
-
 // Create notification badge for 'Messages' link when there are new messages
 socket.on("message", function () {
 	const unreadBadge = document.getElementById("unread-badge");
@@ -70,8 +69,15 @@ socket.on("notification", function (notification) {
 		// Insert the new notification
 		dropdownMenu.insertBefore(newNotification, dropdownMenu.children[1]);
 
-		// Add notification ID to displayedNotifications
-		displayedNotifications.push(notification.id);
+		// Check if there are more than 5 notifications, if so remove the oldest
+		if (displayedNotifications.length + 1 > 5) {
+			console.log(displayedNotifications)
+			const oldestNotificationId = displayedNotifications.pop();
+			console.log({oldestNotificationId})
+			removeNotificationFromDropdown(oldestNotificationId);
+			// Add notification ID to displayedNotifications
+			displayedNotifications = [notification.id, ...displayedNotifications]
+		}
 	}
 });
 
@@ -194,7 +200,7 @@ function createNotification(notification) {
 					<span class="text-muted text-xs fw-light lh-1" title="${
 						notification.created_at
 					}">
-						${formatTimeAgo(new Date(notification.created_at))}
+						${notification.created_at}
 					</span>
 					<button class="border-0 p-0 position-absolute top-50 end-0 translate-middle-y me-2 text-black bg-transparent"
 						title="Mark as read"
@@ -307,5 +313,12 @@ function createNotificationLink(notification) {
 			return `/posts/${notification.post_id}#comment-${notification.comment_id}`;
 		default:
 			return "#";
+	}
+}
+
+function removeNotificationFromDropdown(notificationId) {
+	const notificationItem = document.querySelector(`li[data-notification="${notificationId}"]`);
+	if (notificationItem) {
+			notificationItem.remove();
 	}
 }
