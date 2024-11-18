@@ -34,12 +34,15 @@ from app.services.notifications import (
     mark_as_read,
 )
 from app.services.queries import (
+    get_community_posts,
     get_feed_posts,
     get_friends,
     get_groups,
     get_latest_conversations,
+    get_posts,
     get_requests,
     get_user_by_username,
+    get_user_posts,
     get_users,
 )
 from app.utils.helpers import (
@@ -71,6 +74,7 @@ def user_list():
 # User's posts
 @main_bp.route("/profiles/<username>")
 def user_profile(username):
+    page = request.args.get("page", 1, type=int)
     user = get_user_by_username(username, posts=True)
     is_friends = user.is_friends(session["user_id"])
 
@@ -80,8 +84,15 @@ def user_profile(username):
             "users/profile/index.html", user=user, posts=[], can_view=False
         )
 
+    pagination = get_user_posts(user_id=user.id, page=page)
+
     return render_template(
-        "users/profile/index.html", user=user, posts=user.posts, can_view=True
+        "users/profile/index.html",
+        user=user,
+        posts=pagination.items,
+        can_view=True,
+        page=page,
+        pagination=pagination,
     )
 
 
@@ -325,16 +336,35 @@ def links_settings():
 # Feed
 @main_bp.route("/")
 def feed():
-    posts = Post.query.order_by(Post.created_at.desc()).all()
+    current_user = db.get_or_404(User, session["user_id"])
+    page = request.args.get("page", 1, type=int)
 
-    return render_template("feed.html", posts=posts)
+    pagination = get_community_posts(
+        user_id=current_user.id,
+        friends=current_user.friends,
+        page=page,
+    )
+
+    return render_template(
+        "feed.html", posts=pagination.items, page=page, pagination=pagination
+    )
 
 
 # Friends feed
 @main_bp.route("/my-feed")
 def my_feed():
-    posts = get_feed_posts(session["user_id"])
-    return render_template("my_feed.html", posts=posts)
+    current_user = db.get_or_404(User, session["user_id"])
+    page = request.args.get("page", 1, type=int)
+
+    pagination = get_posts(
+        user_id=current_user.id,
+        friends=current_user.friends,
+        page=page,
+    )
+
+    return render_template(
+        "my_feed.html", posts=pagination.items, page=page, pagination=pagination
+    )
 
 
 # Post page
@@ -1009,15 +1039,23 @@ def mark_all_notifications_read():
 # Hashtag page
 @main_bp.route("/tags")
 def tag_view():
+    page = request.args.get("page", 1, type=int)
     tag = request.args.get("tag")
 
     if not tag:
         return redirect(url_for("main.feed"))
 
+    current_user = db.get_or_404(User, session["user_id"])
+
     pattern = f"%#{tag}%"
 
-    posts = (
-        Post.query.filter(Post.content.ilike(pattern)).order_by(Post.id.desc()).all()
+    pagination = get_community_posts(
+        user_id=current_user.id,
+        friends=current_user.friends,
+        page=page,
+        tag_pattern=pattern,
     )
 
-    return render_template("tags.html", posts=posts, tag=tag)
+    return render_template(
+        "tags.html", posts=pagination.items, tag=tag, page=page, pagination=pagination
+    )

@@ -39,4 +39,39 @@ block title %} Homepage {% endblock %} {% block main %}
 <div class="posts-wrapper">
 	{% for post in posts %} {{ postings.post(post, current_user) }} {% endfor %}
 </div>
+
+<!-- Pagination -->
+<nav aria-label="Feed navigation" class="mt-auto pt-3">
+	<ul class="pagination d-flex justify-content-center">
+		<li
+			class="page-item {% if not pagination.has_prev %}disabled{% endif %}">
+			<a
+				class="page-link"
+				href="{{ url_for('main.my_feed', page=page-1)}}"
+				aria-label="Previous">
+				<span aria-hidden="true">&laquo;</span>
+			</a>
+		</li>
+		{% for page in pagination.iter_pages() %} {% if page %}
+		<li class="page-item {% if page == pagination.page %}active{% endif %}">
+			<a class="page-link" href="{{ url_for('main.my_feed', page=page) }}">
+				{{ page }}
+			</a>
+		</li>
+		{% else %}
+		<li class="page-item disabled">
+			<span class="page-link">...</span>
+		</li>
+		{% endif %} {% endfor %}
+		<li
+			class="page-item {% if not pagination.has_next %}disabled{% endif %}">
+			<a
+				class="page-link"
+				href="{{ url_for('main.my_feed', page=page+1) }}"
+				aria-label="Next">
+				<span aria-hidden="true">&raquo;</span>
+			</a>
+		</li>
+	</ul>
+</nav>
 {% endblock %}

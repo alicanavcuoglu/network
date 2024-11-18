@@ -1,5 +1,5 @@
 from flask import session
-from sqlalchemy import case, func, or_, select
+from sqlalchemy import and_, case, func, or_, select
 
 from app.services import db
 from app.models import Message, Post, User, friends_table, received_requests_table
@@ -129,7 +129,7 @@ def has_unread_messages(user_id):
     return unread_count > 0
 
 
-def get_posts(user_id):
+def get_posts_2(user_id):
     posts = (
         Post.query.filter(Post.user_id == user_id)
         .order_by(Post.created_at.desc())
@@ -167,7 +167,7 @@ def get_users(page=1, per_page=10, search_query=None, get_friends=False, user_id
                 User.surname.ilike(search_term),
                 User.username.ilike(search_term),
                 # For full name
-                func.concat(User.name, ' ', User.surname).ilike(search_term)
+                func.concat(User.name, " ", User.surname).ilike(search_term),
             )
         )
 
@@ -175,6 +175,62 @@ def get_users(page=1, per_page=10, search_query=None, get_friends=False, user_id
         query = query.join(friends_table, friends_table.c.friend_id == User.id).filter(
             friends_table.c.user_id == user_id
         )
-        
+
+    return db.paginate(query, page=page, per_page=per_page)
+
+
+def get_user_posts(page=1, per_page=10, user_id=None):
+    query = (
+        select(Post)
+        .join(Post.user)
+        .filter(
+            Post.user_id == user_id,
+        )
+        .order_by(Post.created_at.desc())
+    )
+
+    return db.paginate(query, page=page, per_page=per_page)
+
+
+# TODO: Add group posts
+def get_community_posts(
+    page=1, per_page=10, user_id=None, friends=None, tag_pattern=None
+):
+    query = select(Post).join(Post.user)
+
+    user_filters = or_(
+        Post.user_id == user_id,
+        Post.user_id.in_([friend.id for friend in friends]),
+        User.is_private == False,
+    )
+
+    if tag_pattern:
+        query = query.filter(and_(user_filters, Post.content.ilike(tag_pattern)))
+    else:
+        query = query.filter(user_filters)
+
+    query = query.order_by(Post.created_at.desc())
+
+    return db.paginate(query, page=page, per_page=per_page)
+
+
+# TODO: Add group posts
+def get_posts(
+    page=1,
+    per_page=10,
+    user_id=None,
+    friends=None,
+):
+    query = (
+        select(Post)
+        .join(Post.user)
+        .filter(
+            or_(
+                Post.user_id == user_id,
+                Post.user_id.in_([friend.id for friend in friends]),
+            )
+        )
+        .order_by(Post.created_at.desc())
+    )
 
     return db.paginate(query, page=page, per_page=per_page)
