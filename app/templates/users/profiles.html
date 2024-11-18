@@ -1,8 +1,12 @@
 {% extends "layout.html" %} {% from 'components/user_card.html' import card %}
-{% block title %} Profiles {% endblock %} {% block main %}
+{% block title %} {{'Friends' if show_requests else 'Profiles' }} {% endblock %} {% block main %}
 <!-- SEARCH -->
-<div class="mb-3 d-flex flex-column-reverse flex-sm-row align-items-md-center align-items-stretch gap-2">
-	<form action="/profiles" method="get" class="flex-grow-1">
+<div
+	class="mb-3 d-flex flex-column-reverse flex-sm-row align-items-md-center align-items-stretch gap-2">
+	<form
+		action="{{ '/friends' if show_requests else '/profiles' }}"
+		method="get"
+		class="flex-grow-1">
 		<div class="input-group">
 			<button class="btn btn-outline-secondary" type="submit">
 				<i class="fa-solid fa-magnifying-glass"></i>
@@ -11,6 +15,7 @@
 			<input
 				type="text"
 				name="q"
+				value="{{ search_query if search_query }}"
 				class="form-control"
 				placeholder="Search for {{'friends' if show_requests else 'people'}}..." />
 		</div>
@@ -29,18 +34,51 @@
 
 <!-- PROFILES -->
 <ul class="list-group">
-	{% if users %} {% for user in users %} {{ card(user, current_user )}} {%
-	endfor %} {% else %}
-	<div class="profile-div-wrapper">
-		<h3>No friends yet</h3>
-		<p class="mb-2 text-secondary">
-			You haven’t added any friends yet. Start connecting with others to
-			see your friends list grow!
-		</p>
-		<a href="{{ url_for('main.user_list') }}" class="btn btn-primary w-100"
-			>Add Friends</a
-		>
-	</div>
+	{% if show_requests %}
+	<!-- Display friends -->
+	 {% if current_user.friends %}
+	 <!-- User has friends -->
+		{% if users %}
+			<!-- Found users matching search results -->
+			{% for user in users %}
+				{{ card(user, current_user) }}
+			{% endfor %}
+		{% else %}
+			<!-- Didn't found users matching search results -->
+			<div class="profile-div-wrapper">
+				<h3>No matching friends</h3>
+				<p class="mb-2 text-secondary">
+						We couldn't find any friends matching your search criteria.
+				</p>
+			</div>
+		{% endif %}
+	{% else %}
+		<!-- User has no friends -->
+		<div class="profile-div-wrapper">
+			<h3>No friends yet</h3>
+			<p class="mb-2 text-secondary">
+					You haven't added any friends yet. Start connecting with others to
+					see your friends list grow!
+			</p>
+			<a href="{{ url_for('main.user_list') }}" class="btn btn-primary w-100">
+					Add Friends
+			</a>
+		</div>
+	{% endif %}
+	{% else %}
+	<!-- Display users -->
+		{% if users %}
+			{% for user in users %}
+				{{ card(user, current_user) }}
+			{% endfor %}
+		{% else %}
+			<div class="profile-div-wrapper">
+				<h3>No users found</h3>
+				<p class="mb-2 text-secondary">
+						We couldn't find any users matching your search criteria.
+				</p>
+			</div>
+		{% endif %}
 	{% endif %}
 </ul>
 {% endblock %}

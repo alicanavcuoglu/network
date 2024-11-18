@@ -40,6 +40,7 @@ from app.services.queries import (
     get_latest_conversations,
     get_requests,
     get_user_by_username,
+    list_users,
 )
 from app.utils.helpers import (
     allowed_file,
@@ -52,12 +53,13 @@ from app.utils.time_utils import format_time_ago
 
 @main_bp.route("/profiles")
 def user_list():
+    search_query = request.args.get("q")
     # Get all users
-    users = (
-        db.session.execute(select(User).filter_by(is_completed=True)).scalars().all()
-    )
+    users = list_users(search_query=search_query)
 
-    return render_template("users/profiles.html", users=users)
+    return render_template(
+        "users/profiles.html", users=users, search_query=search_query
+    )
 
 
 # User's posts
@@ -577,9 +579,17 @@ def load_more_comments(id):
 
 @main_bp.route("/friends")
 def friends():
-    friends = get_friends(session["user_id"])
+    search_query = request.args.get("q")
+    users = list_users(
+        search_query=search_query, get_friends=True, user_id=session["user_id"]
+    )
 
-    return render_template("users/profiles.html", users=friends, show_requests=True)
+    return render_template(
+        "users/profiles.html",
+        users=users,
+        search_query=search_query,
+        show_requests=True,
+    )
 
 
 # Requests

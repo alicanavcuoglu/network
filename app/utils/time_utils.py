@@ -26,7 +26,6 @@ def format_time_ago(dt: datetime):
         return dt.strftime("%m-%d-%Y")
 
 
-# TODO: Test if it returns like 10:25 AM for a posts less than a day old
 def format_message_time(dt: datetime):
     now = datetime.utcnow()
     diff = now - dt

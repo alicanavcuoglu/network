@@ -1,5 +1,5 @@
 from flask import session
-from sqlalchemy import case, select
+from sqlalchemy import case, or_, select
 
 from app.services import db
 from app.models import Message, Post, User, friends_table, received_requests_table
@@ -19,6 +19,7 @@ def get_friends(user_id):
 
     return friends
 
+
 # TODO: Include for you (boolean), posts from groups
 def get_feed_posts(user_id):
     friends_posts = (
@@ -33,12 +34,15 @@ def get_feed_posts(user_id):
 
     return friends_posts
 
+
 # Friend requests for user
 def get_requests(user_id):
     requests = (
         db.session.execute(
             select(User)
-            .join(received_requests_table, received_requests_table.c.request_id == User.id)
+            .join(
+                received_requests_table, received_requests_table.c.request_id == User.id
+            )
             .filter(received_requests_table.c.user_id == user_id)
         )
         .scalars()
@@ -46,6 +50,7 @@ def get_requests(user_id):
     )
 
     return requests
+
 
 # Errors fixed by ChatGPT
 # Messages between current user and users
@@ -149,3 +154,24 @@ def get_groups(user_id):
     ...
 
     # return db.first_or_404(query)
+
+
+def list_users(page=1, per_page=10, search_query=None, get_friends=False, user_id=None):
+    query = select(User).filter_by(is_completed=True)
+
+    if search_query:
+        search_term = f"%{search_query}%"
+        query = query.where(
+            or_(
+                User.name.ilike(search_term),
+                User.surname.ilike(search_term),
+                User.username.ilike(search_term),
+            )
+        )
+
+    if get_friends and user_id:
+        query = query.join(friends_table, friends_table.c.friend_id == User.id).filter(
+            friends_table.c.user_id == user_id
+        )
+
+    return db.session.execute(query).scalars().all()
