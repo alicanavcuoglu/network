@@ -79,7 +79,7 @@ def user_profile(username):
     is_friends = user.is_friends(session["user_id"])
 
     # If user is neither friend nor have a public account don't display posts
-    if user.is_private and not is_friends:
+    if user.is_private and not is_friends and user.id != session["user_id"]:
         return render_template(
             "users/profile/index.html", user=user, posts=[], can_view=False
         )
@@ -110,16 +110,23 @@ def user_profile_friends(username):
     user = get_user_by_username(username)
     is_friends = user.is_friends(session["user_id"])
 
-    if user.is_private and not is_friends:
+    if user.is_private and not is_friends and user.id != session["user_id"]:
         return render_template(
             "users/profile/friends.html", user=user, friends=[], can_view=False
         )
 
+    page = request.args.get("page", 1, type=int)
+
     # Get friends
-    friends = get_friends(user.id)
+    friends = get_friends(user.id, page=page)
 
     return render_template(
-        "users/profile/friends.html", user=user, friends=friends, can_view=True
+        "users/profile/friends.html",
+        user=user,
+        friends=friends.items,
+        can_view=True,
+        page=page,
+        pagination=friends,
     )
 
 
@@ -129,7 +136,7 @@ def user_profile_groups(username):
     user = db.first_or_404(db.select(User).filter_by(username=username))
     is_friends = user.is_friends(session["user_id"])
 
-    if user.is_private and not is_friends:
+    if user.is_private and not is_friends and user.id != session["user_id"]:
         return render_template(
             "users/profile/groups.html", user=user, groups=[], can_view=False
         )

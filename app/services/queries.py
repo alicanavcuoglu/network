@@ -6,18 +6,18 @@ from app.models import Message, Post, User, friends_table, received_requests_tab
 
 
 # Friends of user
-def get_friends(user_id):
-    friends = (
-        db.session.execute(
-            select(User)
-            .join(friends_table, friends_table.c.friend_id == User.id)
-            .filter(friends_table.c.user_id == user_id)
-        )
-        .scalars()
-        .all()
+def get_friends(
+    user_id,
+    page=1,
+    per_page=10,
+):
+    query = (
+        select(User)
+        .join(friends_table, friends_table.c.friend_id == User.id)
+        .filter(friends_table.c.user_id == user_id)
     )
 
-    return friends
+    return db.paginate(query, page=page, per_page=per_page)
 
 
 # TODO: Include for you (boolean), posts from groups, include current user's post / reposts
