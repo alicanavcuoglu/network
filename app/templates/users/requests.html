@@ -1,10 +1,20 @@
 {% extends "layout.html" %} {% from 'components/user_card.html' import card %}
 {% block title %} Friend Requests {% endblock %} {% block main %}
 <ul class="list-group">
+	{% if users %}
 	<h2 class="mb-3">
-		You have {{ current_user.received_requests | length }} friend request{{'s' if
-		current_user.received_requests | length > 1 else ''}}
+		You have {{ current_user.received_requests | length }} friend
+		request{{'s' if current_user.received_requests | length > 1 else ''}}
 	</h2>
-	{% for user in users %} {{ card(user, current_user, True)}} {% endfor %}
+	{% for user in users %} {{ card(user, current_user, True)}} {% endfor %} {%
+	else %}
+	<div class="profile-div-wrapper">
+		<h3>No friend requests waiting</h3>
+		<p class="mb-2 text-secondary">
+			You don’t have any friend requests right now. When someone sends you
+			one, it’ll show up here!
+		</p>
+	</div>
+	{% endif %}
 </ul>
 {% endblock %}

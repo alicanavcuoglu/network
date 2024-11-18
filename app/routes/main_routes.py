@@ -938,18 +938,30 @@ def mark_messages_as_read(username):
 
 @main_bp.route("/notifications")
 def notifications():
-    current_user = db.get_or_404(User, session["user_id"])
-    notifications = get_notifications(current_user.id)
+    page = request.args.get("page", 1, type=int)
 
-    return render_template("notifications.html", notifications=notifications)
+    pagination = get_notifications(session["user_id"], page=page)
+
+    return render_template(
+        "notifications.html",
+        notifications=pagination.items,
+        pagination=pagination,
+        page=page,
+    )
 
 
 @main_bp.route("/notifications/unread/all")
 def all_unread_notifications():
-    current_user = db.get_or_404(User, session["user_id"])
-    notifications = get_all_unread_notifications(current_user.id)
+    page = request.args.get("page", 1, type=int)
 
-    return render_template("notifications_unread.html", notifications=notifications)
+    pagination = get_all_unread_notifications(session["user_id"], page=page)
+
+    return render_template(
+        "notifications_unread.html",
+        notifications=pagination.items,
+        pagination=pagination,
+        page=page,
+    )
 
 
 @main_bp.route("/notifications/unread")

@@ -22,7 +22,13 @@
 	<button
 		class="btn btn-outline-secondary"
 		onclick="markAllRead()"
-		{% if not g.unread_notifications %}disabled{% endif %}>
+		{%
+		if
+		not
+		g.unread_notifications
+		%}disabled{%
+		endif
+		%}>
 		Mark all as read
 	</button>
 </div>
@@ -69,7 +75,49 @@
 	{% endfor %}
 </ul>
 {% else %}
-<div class="d-flex align-items-center justify-content-center py-5">
-	<h2 class="text-muted">No notifications.</h2>
+<div class="profile-div-wrapper">
+	<h3>No notifications yet</h3>
+	<p class="mb-2 text-secondary">
+		You don’t have any notifications yet. When something happens, you’ll see
+		it here!
+	</p>
 </div>
-{% endif %} {% endblock %}
+{% endif %}
+
+<!-- Pagination -->
+<nav aria-label="Notifications navigation" class="mt-auto pt-3">
+	<ul class="pagination d-flex justify-content-center">
+		<li
+			class="page-item {% if not pagination.has_prev %}disabled{% endif %}">
+			<a
+				class="page-link"
+				href="{{ url_for('main.notifications', page=page-1)}}"
+				aria-label="Previous">
+				<span aria-hidden="true">&laquo;</span>
+			</a>
+		</li>
+		{% for page in pagination.iter_pages() %} {% if page %}
+		<li class="page-item {% if page == pagination.page %}active{% endif %}">
+			<a
+				class="page-link"
+				href="{{ url_for('main.notifications', page=page) }}">
+				{{ page }}
+			</a>
+		</li>
+		{% else %}
+		<li class="page-item disabled">
+			<span class="page-link">...</span>
+		</li>
+		{% endif %} {% endfor %}
+		<li
+			class="page-item {% if not pagination.has_next %}disabled{% endif %}">
+			<a
+				class="page-link"
+				href="{{ url_for('main.notifications', page=page+1) }}"
+				aria-label="Next">
+				<span aria-hidden="true">&raquo;</span>
+			</a>
+		</li>
+	</ul>
+</nav>
+{% endblock %}

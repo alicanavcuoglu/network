@@ -2,18 +2,37 @@
 block title %} Homepage {% endblock %} {% block main %}
 
 <!-- TABS -->
-<div
-	class="list-group d-flex flex-row text-center overflow-x-auto bg-light list-group-flush account-settings-links border-bottom mb-3">
-	<a
-		href="{{ url_for('main.feed') }}"
-		class="list-group-item list-group-item-action"
-		>Community</a
-	>
-	<a
-		href="{{ url_for('main.my_feed') }}"
-		class="list-group-item list-group-item-action active"
-		>My Feed</a
-	>
+<div class="mb-3">
+	<div
+		class="list-group d-flex flex-row text-center overflow-x-auto bg-light list-group-flush account-settings-links border-bottom mb-3">
+		<a
+			href="{{ url_for('main.feed') }}"
+			class="list-group-item list-group-item-action"
+			>Community</a
+		>
+		<a
+			href="{{ url_for('main.my_feed') }}"
+			class="list-group-item list-group-item-action active"
+			>My Feed</a
+		>
+	</div>
+
+	<form
+		action="{{ url_for('main.tag_view', tag=tag) }}"
+		method="get"
+		class="flex-grow-1">
+		<div class="input-group">
+			<button class="btn btn-outline-secondary" type="submit">
+				<i class="fa-solid fa-magnifying-glass"></i>
+			</button>
+
+			<input
+				type="text"
+				name="tag"
+				class="form-control"
+				placeholder="Search #tags..." />
+		</div>
+	</form>
 </div>
 
 {{ postings.create_post(current_user) }}

@@ -1,3 +1,4 @@
+from sqlalchemy import select
 from app.events import connected_users
 from app.models import Notification, db
 from app.services import socketio
@@ -36,22 +37,26 @@ def get_unread_notifications(user_id):
     )
 
 
-def get_all_unread_notifications(user_id):
+def get_all_unread_notifications(user_id, page=1, per_page=10):
     """Get user's unread notifications"""
-    return (
-        Notification.query.filter_by(recipient_id=user_id, is_read=False)
+    query = (
+        select(Notification)
+        .filter_by(recipient_id=user_id, is_read=False)
         .order_by(Notification.created_at.desc())
-        .all()
     )
 
+    return db.paginate(query, page=page, per_page=per_page)
 
-def get_notifications(user_id):
+
+def get_notifications(user_id, page=1, per_page=10):
     """Get user's all notifications"""
-    return (
-        Notification.query.filter_by(recipient_id=user_id)
+    query = (
+        select(Notification)
+        .filter_by(recipient_id=user_id)
         .order_by(Notification.created_at.desc())
-        .all()
     )
+
+    return db.paginate(query, page=page, per_page=per_page)
 
 
 def get_next_notification(user_id, notificationIds):
