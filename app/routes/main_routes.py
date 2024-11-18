@@ -38,6 +38,7 @@ from app.services.queries import (
     get_friends,
     get_groups,
     get_latest_conversations,
+    get_requests,
     get_user_by_username,
 )
 from app.utils.helpers import (
@@ -578,21 +579,15 @@ def load_more_comments(id):
 def friends():
     friends = get_friends(session["user_id"])
 
-    return render_template("users/profiles.html", users=friends)
+    return render_template("users/profiles.html", users=friends, show_requests=True)
 
 
 # Requests
 @main_bp.route("/friends/requests")
-def display_friend_requests():
+def friend_requests():
     user = db.get_or_404(User, session["user_id"])
 
-    received_requests = (
-        User.query.filter(User.id in user.received_requests.split(","))
-        .order_by(User.received_requests.desc())
-        .all()
-        if user.received_requests
-        else []
-    )
+    received_requests = get_requests(user.id)
 
     return render_template("users/requests.html", users=received_requests)
 

@@ -1,8 +1,8 @@
 {% extends "layout.html" %} {% from 'components/user_card.html' import card %}
 {% block title %} Profiles {% endblock %} {% block main %}
 <!-- SEARCH -->
-<div class="mb-3">
-	<form action="/profiles" method="get">
+<div class="mb-3 d-flex flex-column-reverse flex-sm-row align-items-md-center align-items-stretch gap-2">
+	<form action="/profiles" method="get" class="flex-grow-1">
 		<div class="input-group">
 			<button class="btn btn-outline-secondary" type="submit">
 				<i class="fa-solid fa-magnifying-glass"></i>
@@ -12,9 +12,19 @@
 				type="text"
 				name="q"
 				class="form-control"
-				placeholder="Search for people..." />
+				placeholder="Search for {{'friends' if show_requests else 'people'}}..." />
 		</div>
 	</form>
+	{% if show_requests %}
+	<a
+		href="{{ url_for('main.friend_requests') }}"
+		class="btn btn-primary btn-requests">
+		<span>Friendship Requests</span>
+		<div class="requests-count">
+			{{ current_user.received_requests | length }}
+		</div>
+	</a>
+	{% endif %}
 </div>
 
 <!-- PROFILES -->
@@ -27,9 +37,7 @@
 			You haven’t added any friends yet. Start connecting with others to
 			see your friends list grow!
 		</p>
-		<a
-			href="{{ url_for('main.user_list') }}"
-			class="btn btn-primary w-100"
+		<a href="{{ url_for('main.user_list') }}" class="btn btn-primary w-100"
 			>Add Friends</a
 		>
 	</div>

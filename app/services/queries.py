@@ -2,7 +2,7 @@ from flask import session
 from sqlalchemy import case, select
 
 from app.services import db
-from app.models import Message, Post, User, friends_table
+from app.models import Message, Post, User, friends_table, received_requests_table
 
 
 # Friends of user
@@ -33,6 +33,19 @@ def get_feed_posts(user_id):
 
     return friends_posts
 
+# Friend requests for user
+def get_requests(user_id):
+    requests = (
+        db.session.execute(
+            select(User)
+            .join(received_requests_table, received_requests_table.c.request_id == User.id)
+            .filter(received_requests_table.c.user_id == user_id)
+        )
+        .scalars()
+        .all()
+    )
+
+    return requests
 
 # Errors fixed by ChatGPT
 # Messages between current user and users

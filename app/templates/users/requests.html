@@ -1,6 +1,10 @@
 {% extends "layout.html" %} {% from 'components/user_card.html' import card %}
 {% block title %} Friend Requests {% endblock %} {% block main %}
 <ul class="list-group">
+	<h2 class="mb-3">
+		You have {{ current_user.received_requests | length }} friend request{{'s' if
+		current_user.received_requests | length > 1 else ''}}
+	</h2>
 	{% for user in users %} {{ card(user, current_user, True)}} {% endfor %}
 </ul>
 {% endblock %}
