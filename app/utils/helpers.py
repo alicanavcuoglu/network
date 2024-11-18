@@ -134,7 +134,7 @@ def process_hashtags(text):
         tag = match.group(1)  # Get the tag without the #
         # Convert to lowercase for case-insensitive handling
         tag_lower = tag.lower()
-        return f'<a href="/tags/{tag_lower}">#{tag}</a>'
+        return f'<a href="/tags?tag={tag_lower}">#{tag}</a>'
 
     # Replace all hashtags with their link versions
     processed_text = re.sub(pattern, replace_tag, text)

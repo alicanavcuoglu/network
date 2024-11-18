@@ -189,13 +189,14 @@ document.addEventListener("click", (e) => {
 	if (e.target.classList.contains("delete-comment-btn")) {
 		const comment = e.target.closest(".comment");
 		const commentId = comment.getAttribute("data-comment-id");
+		console.log(commentId)
 
 		if (confirm("Are you sure you want to delete this comment?")) {
-			fetch(`/comment/${commentId}`, { method: "DELETE" })
+			fetch(`/comment/delete/${commentId}`, { method: "DELETE" })
 				.then((response) => response.json())
 				.then((data) => {
 					if (data.success) {
-						comment.remove();
+						location.reload()
 					}
 				})
 				.catch((error) => {

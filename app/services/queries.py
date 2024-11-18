@@ -156,7 +156,7 @@ def get_groups(user_id):
     # return db.first_or_404(query)
 
 
-def list_users(page=1, per_page=10, search_query=None, get_friends=False, user_id=None):
+def get_users(page=1, per_page=10, search_query=None, get_friends=False, user_id=None):
     query = select(User).filter_by(is_completed=True)
 
     if search_query:
@@ -173,5 +173,6 @@ def list_users(page=1, per_page=10, search_query=None, get_friends=False, user_i
         query = query.join(friends_table, friends_table.c.friend_id == User.id).filter(
             friends_table.c.user_id == user_id
         )
+        
 
-    return db.session.execute(query).scalars().all()
+    return db.paginate(query, page=page, per_page=per_page)

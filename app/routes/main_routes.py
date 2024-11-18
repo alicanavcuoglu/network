@@ -40,7 +40,7 @@ from app.services.queries import (
     get_latest_conversations,
     get_requests,
     get_user_by_username,
-    list_users,
+    get_users,
 )
 from app.utils.helpers import (
     allowed_file,
@@ -53,12 +53,18 @@ from app.utils.time_utils import format_time_ago
 
 @main_bp.route("/profiles")
 def user_list():
+    page = request.args.get("page", 1, type=int)
     search_query = request.args.get("q")
+
     # Get all users
-    users = list_users(search_query=search_query)
+    users = get_users(search_query=search_query, page=page)
 
     return render_template(
-        "users/profiles.html", users=users, search_query=search_query
+        "users/profiles.html",
+        users=users.items,
+        page=page,
+        search_query=search_query,
+        pagination=users,
     )
 
 
@@ -579,15 +585,21 @@ def load_more_comments(id):
 
 @main_bp.route("/friends")
 def friends():
+    page = request.args.get("page", 1, type=int)
     search_query = request.args.get("q")
-    users = list_users(
-        search_query=search_query, get_friends=True, user_id=session["user_id"]
+    users = get_users(
+        search_query=search_query,
+        page=page,
+        get_friends=True,
+        user_id=session["user_id"],
     )
 
     return render_template(
         "users/profiles.html",
-        users=users,
+        users=users.items,
+        page=page,
         search_query=search_query,
+        pagination=users,
         show_requests=True,
     )
 
@@ -983,16 +995,17 @@ def mark_all_notifications_read():
 
 
 # Hashtag page
-@main_bp.route("/tags/<string:tag>")
-def tag_view(tag):
+@main_bp.route("/tags")
+def tag_view():
+    tag = request.args.get("tag")
+
+    if not tag:
+        return redirect(url_for("main.feed"))
+
     pattern = f"%#{tag}%"
 
     posts = (
         Post.query.filter(Post.content.ilike(pattern)).order_by(Post.id.desc()).all()
     )
-
-    for post in posts:
-        post.total_comments = len(post.comments)
-        post.comments = sorted(post.comments, key=lambda x: x.created_at)[:3]
 
     return render_template("tags.html", posts=posts, tag=tag)

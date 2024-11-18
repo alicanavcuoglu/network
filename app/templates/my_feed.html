@@ -20,6 +20,4 @@ block title %} Homepage {% endblock %} {% block main %}
 <div class="posts-wrapper">
 	{% for post in posts %} {{ postings.post(post, current_user) }} {% endfor %}
 </div>
-
-<script src="{{ url_for('static', filename='js/feed.js')}}"></script>
 {% endblock %}
