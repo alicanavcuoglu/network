@@ -1,5 +1,5 @@
 from flask import session
-from sqlalchemy import case, or_, select
+from sqlalchemy import case, func, or_, select
 
 from app.services import db
 from app.models import Message, Post, User, friends_table, received_requests_table
@@ -20,7 +20,7 @@ def get_friends(user_id):
     return friends
 
 
-# TODO: Include for you (boolean), posts from groups
+# TODO: Include for you (boolean), posts from groups, include current user's post / reposts
 def get_feed_posts(user_id):
     friends_posts = (
         db.session.execute(
@@ -166,6 +166,8 @@ def get_users(page=1, per_page=10, search_query=None, get_friends=False, user_id
                 User.name.ilike(search_term),
                 User.surname.ilike(search_term),
                 User.username.ilike(search_term),
+                # For full name
+                func.concat(User.name, ' ', User.surname).ilike(search_term)
             )
         )
 
