@@ -3,20 +3,13 @@ import os
 import re
 from datetime import datetime
 from functools import wraps
+from typing import Literal
 from urllib.parse import urlparse
 
 import boto3
+from botocore.config import Config
 from flask import flash, redirect, session, url_for
 from werkzeug.utils import secure_filename
-
-from app.models import User
-
-from typing import Final, Literal
-
-# AWS S3 Folders
-USER_IMAGE_FOLDER: Final[str] = "user-images"
-GROUP_IMAGE_FOLDER: Final[str] = "group-images"
-# POST_IMAGE_FOLDER: Final[str] = "post-images"
 
 
 # Login required
@@ -197,7 +190,21 @@ s3 = boto3.client(
     "s3",
     aws_access_key_id=os.getenv("AWS_ACCESS_KEY"),
     aws_secret_access_key=os.getenv("AWS_SECRET_ACCESS_KEY"),
+    config=Config(signature_version="s3v4"),
 )
+
+# Get presigned url
+def get_presigned_url(key, expires_in=3600):
+    try:
+        url = s3.generate_presigned_url(
+            'get_object',
+            Params={'Bucket': os.getenv("AWS_BUCKET_NAME"), 'Key': key},
+            ExpiresIn=expires_in
+        )
+        return url
+    except Exception as e:
+        print("Error generating URL:", e)
+        return None
 
 
 # Upload image to AWS S3
@@ -207,12 +214,9 @@ def upload_file_to_s3(
     try:
         filename = secure_filename(file.filename)
 
-        if not filename:
+        if not filename or not allowed_file(filename):
             return None
 
-        # Check file extension
-        if not allowed_file(filename):
-            return None
 
         timestamp = datetime.now().strftime("%Y%m%d-%H%M%S")
         unique_filename = f"{folder}/{timestamp}-{filename}"
@@ -221,11 +225,11 @@ def upload_file_to_s3(
             file,
             os.getenv("AWS_BUCKET_NAME"),
             unique_filename,
-            ExtraArgs={"ContentType": file.content_type},
+            ExtraArgs={"ContentType": file.content_type, "ACL": "private"},
         )
 
-        # After upload file to s3 bucket, return image url
-        return f"{os.getenv('AWS_DOMAIN')}{unique_filename}"
+        # After upload file to s3 bucket, return filename
+        return unique_filename
 
     except Exception as e:
         # This is a catch all exception, edit this part to fit your needs.
@@ -234,32 +238,13 @@ def upload_file_to_s3(
 
 
 # Delete user image from AWS S3
-def delete_file_from_s3(
-    file
-):
-    try:
-        # Parse the URL
-        parsed_url = urlparse(file)
-        # Get the path after the bucket name
-        path_parts = parsed_url.path.split("/")
-
-        # Remove empty strings and the first element (which is empty due to leading /)
-        path_parts = [part for part in path_parts if part]
-
-        # If the bucket name is in the path (like in virtual-hosted style URLs),
-        # remove it from the path parts
-        bucket_name = os.getenv("AWS_BUCKET_NAME")
-        if path_parts[0] == bucket_name:
-            path_parts.pop(0)
-
-        # Join the remaining parts to form the key
-        key = "/".join(path_parts)
-
-        s3.delete_object(Bucket=bucket_name, Key=key)
-        return True
-    except Exception as e:
-        print("Error Deleting File: ", e)
-        return str(e)
-
-
-# TODO: Create and delete group image files from s3
+def delete_file_from_s3(key):
+   try:
+       s3.delete_object(
+           Bucket=os.getenv("AWS_BUCKET_NAME"),
+           Key=key
+       )
+       return True
+   except Exception as e:
+       print("Error Deleting File:", e)
+       return str(e)

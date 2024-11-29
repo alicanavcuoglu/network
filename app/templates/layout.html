@@ -213,7 +213,7 @@
 									data-bs-toggle="dropdown"
 									aria-expanded="false">
 									<img
-										src="{{ current_user.image if current_user.image else url_for('static', filename='placeholder.jpg')}}"
+										src="{{ current_user.image|s3_url('user') }}"
 										alt="avatar"
 										class="avatar xs" />
 								</button>

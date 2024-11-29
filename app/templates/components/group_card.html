@@ -1,12 +1,16 @@
 {% macro render_group_card(group, actions = True) %}
-<a href="{{ url_for('group.page', id=group.id)}}" class="card overflow-hidden text-decoration-none">
-	<img
-		src="{{ group.image if group.image else url_for('static', filename='group_placeholder.jpg')}}"
-		class="group-image"
-		alt="{{ group.name }}" />
-	<div class="card-body">
-		<h5 class="card-title">{{ group.name }}</h5>
-		<p class="card-text group-preview">{{ group.about }}</p>
-	</div>
+<a
+  href="{{ url_for('group.page', id=group.id)}}"
+  class="card overflow-hidden text-decoration-none"
+>
+  <img
+    src="{{ group.image|s3_url('group') }}"
+    class="group-image"
+    alt="{{ group.name }}"
+  />
+  <div class="card-body">
+    <h5 class="card-title">{{ group.name }}</h5>
+    <p class="card-text group-preview">{{ group.about }}</p>
+  </div>
 </a>
 {% endmacro %}

@@ -37,7 +37,7 @@ block main %}
 					<div class="d-flex flex-column flex-sm-row gap-4 align-items-center">
 						<input type="hidden" name="delete_image" id="delete_image" value="false" />
 						<img id="imagePreview"
-							src="{{ group.image if group.image else url_for('static', filename='group_placeholder.jpg') }}"
+							src="{{ group.image|s3_url('group') }}"
 							alt="avatar" class="avatar" />
 						<div>
 							<div class="d-flex flex-row flex-wrap align-items-center gap-2">

@@ -219,8 +219,8 @@ def general_settings():
             return abort(422)
 
         delete_file_from_s3(current_user.image)
-        image_path = upload_file_to_s3(image)
-        current_user.image = image_path
+        image_key = upload_file_to_s3(image)
+        current_user.image = image_key
 
     elif current_user.image and delete_image and not image.filename:
         delete_file_from_s3(current_user.image)

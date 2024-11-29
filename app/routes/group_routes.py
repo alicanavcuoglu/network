@@ -71,11 +71,11 @@ def create():
             flash("Please fill the required fields!", "error")
             return redirect(url_for("group.create"))
 
-        image_path = upload_file_to_s3(image, folder="group-image")
+        image_key = upload_file_to_s3(image, folder="group-image")
 
         group = Group(
             owner_id=session["user_id"],
-            image=image_path,
+            image=image_key,
             name=name,
             about=about,
             group_type=privacy,
@@ -247,8 +247,8 @@ def settings(id):
                 return abort(422)
 
             delete_file_from_s3(group.image)
-            image_path = upload_file_to_s3(image, folder="group-image")
-            group.image = image_path
+            image_key = upload_file_to_s3(image, folder="group-image")
+            group.image = image_key
 
         elif group.image and delete_image and not image.filename:
             delete_file_from_s3(group.image)

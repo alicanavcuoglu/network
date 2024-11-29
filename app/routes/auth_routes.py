@@ -97,10 +97,10 @@ def complete_profile():
             flash("Please fill the required fields!", "error")
             return redirect(url_for("auth.complete_profile"))
 
-        image_path = upload_file_to_s3(image)
+        image_key = upload_file_to_s3(image)
 
         # Update user
-        user.image = image_path
+        user.image = image_key
         user.name = name
         user.surname = surname
         user.location = location

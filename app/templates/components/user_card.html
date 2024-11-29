@@ -1,6 +1,6 @@
 {% from "components/user_actions.html" import render_actions,
-render_delete_modal, render_remove_user_modal %} {% macro card(user, current_user,
-actions = True, group = None) %}
+render_delete_modal, render_remove_user_modal %} {% macro card(user,
+current_user, actions = True, group = None) %}
 <a
   href="{{ url_for('main.user_profile', username=user.username) }}"
   class="list-group-item list-group-item-action"
@@ -12,7 +12,7 @@ actions = True, group = None) %}
       class="d-flex flex-column flex-sm-row align-items-center align-items-sm-start text-center text-sm-start"
     >
       <img
-        src="{{ user.image if user.image else url_for('static', filename='placeholder.jpg')}}"
+        src="{{ user.image|s3_url('user') }}"
         alt="{{ user.username }}"
         class="avatar md"
       />

@@ -2,180 +2,193 @@
 main %}
 
 <form action="{{ url_for('auth.register') }}" method="post" class="auth-form">
-	<h1 class="fs-4 text-center">Register to Network50!</h1>
-	<input
-		autocomplete="off"
-		autofocus
-		class="form-control"
-		name="username"
-		placeholder="Username"
-		type="text"
-		required />
-	<input
-		autocomplete="off"
-		autofocus
-		class="form-control"
-		name="email"
-		placeholder="Email"
-		type="email"
-		required />
-	<input
-		class="form-control"
-		name="password"
-		placeholder="Password"
-		type="password"
-		required />
-	<input
-		class="form-control"
-		name="confirmation"
-		placeholder="Confirm password"
-		type="password"
-		required />
-	<div class="form-check">
-		<input
-			class="form-check-input"
-			type="checkbox"
-			value="terms"
-			name="terms"
-			id="terms"
-			required />
-		<label class="form-check-label small text-muted" for="terms"
-			>I have read and agree to the
-			<a
-				href="#"
-				data-bs-toggle="modal"
-				data-bs-target="#termsModal"
-				onclick="event.stopPropagation()"
-				>Terms of Use</a
-			>.</label
-		>
-	</div>
+  <h1 class="fs-4 text-center">Register to Network50!</h1>
+  <input
+    autocomplete="off"
+    autofocus
+    class="form-control"
+    name="username"
+    placeholder="Username"
+    type="text"
+    required
+  />
+  <input
+    autocomplete="off"
+    autofocus
+    class="form-control"
+    name="email"
+    placeholder="Email"
+    type="email"
+    required
+  />
+  <input
+    class="form-control"
+    name="password"
+    placeholder="Password"
+    type="password"
+    required
+  />
+  <input
+    class="form-control"
+    name="confirmation"
+    placeholder="Confirm password"
+    type="password"
+    required
+  />
+  <div class="form-check">
+    <input
+      class="form-check-input"
+      type="checkbox"
+      value="terms"
+      name="terms"
+      id="terms"
+      required
+    />
+    <label class="form-check-label small text-muted" for="terms"
+      >I have read and agree to the
+      <a
+        href="#"
+        data-bs-toggle="modal"
+        data-bs-target="#termsModal"
+        onclick="event.stopPropagation()"
+        >Terms of Use</a
+      >.</label
+    >
+  </div>
 
-	<button class="btn btn-primary" type="submit" disabled>Register</button>
+  <button class="btn btn-primary" type="submit" disabled>Register</button>
 
-	<p class="text-center">
-		Already have an account?<br /><a
-			href="{{ url_for('auth.login') }}"
-			class="text-primary"
-			>Login here</a
-		>
-	</p>
+  <p class="text-center">
+    Already have an account?<br /><a
+      href="{{ url_for('auth.login') }}"
+      class="text-primary"
+      >Login here</a
+    >
+  </p>
 </form>
 
 <!-- Modal Body -->
 <!-- if you want to close by clicking outside the modal, delete the last endpoint:data-bs-backdrop and data-bs-keyboard -->
 <div
-	class="modal fade"
-	id="termsModal"
-	tabindex="-1"
-	role="dialog"
-	aria-labelledby="Terms of Use"
-	aria-hidden="true">
-	<div
-		class="modal-dialog modal-dialog-scrollable modal-dialog-centered"
-		role="document">
-		<div class="modal-content">
-			<div class="modal-header">
-				<h5 class="modal-title">Terms of Use</h5>
-				<button
-					type="button"
-					class="btn-close"
-					data-bs-dismiss="modal"
-					aria-label="Close"></button>
-			</div>
-			<div class="modal-body">
-				<p>By creating an account, you agree to the following:</p>
+  class="modal fade"
+  id="termsModal"
+  tabindex="-1"
+  role="dialog"
+  aria-labelledby="Terms of Use"
+  aria-hidden="true"
+>
+  <div
+    class="modal-dialog modal-dialog-scrollable modal-dialog-centered"
+    role="document"
+  >
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Terms of Use</h5>
+        <button
+          type="button"
+          class="btn-close"
+          data-bs-dismiss="modal"
+          aria-label="Close"
+        ></button>
+      </div>
+      <div class="modal-body">
+        <p class="mb-2">By creating an account, you agree to the following:</p>
 
-				<ol class="list-group list-group-numbered">
-					<li class="list-group-item border-0 p-0">
-						<strong>Eligibility</strong>
-						<p>
-							You are an enrolled student in Harvard's CS50
-							courses.
-						</p>
-					</li>
-					<li class="list-group-item border-0 p-0">
-						<strong>Account Responsibility</strong>
-						<p>
-							You are responsible for maintaining the
-							confidentiality of your account credentials and for
-							any activity conducted through your account.
-						</p>
-					</li>
-					<li class="list-group-item border-0 p-0">
-						<strong>Respectful Conduct</strong>
-						<p>
-							You agree to interact respectfully with other users.
-							Harassment, hate speech, or any inappropriate
-							behavior will result in account suspension or
-							removal.
-						</p>
-					</li>
-					<li class="list-group-item border-0 p-0">
-						<strong>Appropriate Content</strong>
-						<p>
-							You will not post or share content that is
-							offensive, harmful, or violates intellectual
-							property rights.
-						</p>
-					</li>
-					<li class="list-group-item border-0 p-0">
-						<strong>Privacy</strong>
-						<p>
-							You understand that your personal information,
-							including your name, image and profile details, may
-							be visible to other users within the app.
-						</p>
-					</li>
-					<li class="list-group-item border-0 p-0">
-						<strong>Use of the App</strong>
-						<p>
-							You will use this app solely for connecting with
-							other CS50 students and for educational and social
-							purposes related to the course.
-						</p>
-					</li>
-					<li class="list-group-item border-0 p-0">
-						<strong>Spam and Unauthorized Activities</strong>
-						<p>
-							You will not engage in spam, unsolicited
-							advertising, or any unauthorized activities that
-							could disrupt the app’s functionality or harm its
-							users.
-						</p>
-					</li>
-					<li class="list-group-item border-0 p-0">
-						<strong>Data Collection</strong>
-						<p>
-							The app may collect limited data to improve
-							functionality. This data will not be shared with
-							third parties without your consent.
-						</p>
-					</li>
-					<li class="list-group-item border-0 p-0">
-						<strong>Changes to the Terms</strong>
-						<p>
-							The app administrators reserve the right to modify
-							these terms at any time. Continued use of the app
-							implies acceptance of the updated terms.
-						</p>
-					</li>
-				</ol>
-			</div>
-		</div>
-	</div>
+        <ol class="list-group list-group-numbered gap-2">
+          <li class="list-group-item border-0 p-0">
+            <strong>Eligibility</strong>
+            <p>You are an enrolled student in Harvard's CS50 courses.</p>
+          </li>
+          <li class="list-group-item border-0 p-0">
+            <strong>Account Responsibility</strong>
+            <p>
+              You are responsible for maintaining the confidentiality of your
+              account credentials and for any activity conducted through your
+              account.
+            </p>
+          </li>
+          <li class="list-group-item border-0 p-0">
+            <strong>Respectful Conduct</strong>
+            <p>
+              You agree to interact respectfully with other users. Harassment,
+              hate speech, or any inappropriate behavior will result in account
+              suspension or removal.
+            </p>
+          </li>
+          <li class="list-group-item border-0 p-0">
+            <strong>Appropriate Content</strong>
+            <p>
+              You will not post or share content that is offensive, harmful, or
+              violates intellectual property rights.
+            </p>
+          </li>
+          <li class="list-group-item border-0 p-0">
+            <strong>Privacy</strong>
+            <p>
+              You understand that your personal information, including your
+              name, image and profile details, may be visible to other users
+              within the app.
+            </p>
+          </li>
+          <li class="list-group-item border-0 p-0">
+            <strong>Use of the App</strong>
+            <p>
+              You will use this app solely for connecting with other CS50
+              students and for educational and social purposes related to the
+              course.
+            </p>
+          </li>
+          <li class="list-group-item border-0 p-0">
+            <strong>Spam and Unauthorized Activities</strong>
+            <p>
+              You will not engage in spam, unsolicited advertising, or any
+              unauthorized activities that could disrupt the app’s functionality
+              or harm its users.
+            </p>
+          </li>
+					
+          <li class="list-group-item border-0 p-0">
+            <strong>Data Storage and Collection</strong>
+            <ul>
+              <li>
+                The app stores user-generated content, including images and
+                media, on Amazon Web Services (AWS) infrastructure
+              </li>
+              <li>
+                By uploading content, you grant us permission to store and
+                process this content on AWS services
+              </li>
+              <li>The app may collect limited data to improve functionality</li>
+              <li>
+                Your content remains your property and will not be shared with
+                third parties without your consent
+              </li>
+            </ul>
+          </li>
+          <li class="list-group-item border-0 p-0">
+            <strong>Changes to the Terms</strong>
+            <p>
+              The app administrators reserve the right to modify these terms at
+              any time. Continued use of the app implies acceptance of the
+              updated terms.
+            </p>
+          </li>
+        </ol>
+      </div>
+    </div>
+  </div>
 </div>
 
 <script>
-	const terms = document.getElementById("terms");
-	const button = document.querySelector("button");
+  const terms = document.getElementById('terms');
+  const button = document.querySelector('button');
 
-	terms.addEventListener("change", function () {
-		if (this.checked) {
-			button.disabled = false;
-		} else {
-			button.disabled = true;
-		}
-	});
+  terms.addEventListener('change', function () {
+    if (this.checked) {
+      button.disabled = false;
+    } else {
+      button.disabled = true;
+    }
+  });
 </script>
 {% endblock %}

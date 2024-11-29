@@ -1,138 +1,136 @@
-{% from 'components/user_actions.html' import render_actions, render_delete_modal %}
-{% macro cover(user, current_user) %}
+{% from 'components/user_actions.html' import render_actions,
+render_delete_modal %} {% macro cover(user, current_user) %}
 <div
-	class="mt-4 mb-4 d-flex flex-column flex-sm-row align-items-stretch align-items-sm-center justify-content-between row-gap-4">
-	<div
-		class="d-flex flex-column flex-sm-row text-center text-sm-start justify-content-center align-items-center gap-2 gap-sm-4">
-		<img
-			src="{{ user.image if user.image else url_for('static', filename='placeholder.jpg')}}"
-			alt="{{user.name}} {{user.surname}}"
-			class="avatar lg mx-auto" />
-		<div class="d-flex flex-column gap-2">
-			<div class="d-flex flex-column gap-1 mb-2">
-				<h1 class=" fs-2 lh-1">{{user.name}} {{user.surname}}</h1>
-				{% if user.working_on %}
-				<p class="small ">
-					<span class="text-secondary"> {{ user.working_on}} </span>
-				</p>
-				{% endif %} {% if user.location %}
-				<p class="small ">
-					<i class="fas fa-map-marker-alt mr-2"></i>
-					<span class="text-secondary"> {{ user.location}} </span>
-				</p>
-				{% endif %}
-			</div>
-			{% if user.id != current_user.id %}
-				{{ render_actions(user, current_user) }}
-				{{ render_delete_modal(user) }}
-			{% else %}
-			<a href="/settings"
-				><button class="btn btn-outline-primary">
-					<span class="small"> Edit profile </span>
-				</button>
-			</a>
-			{% endif %}
-		</div>
-	</div>
+  class="mt-4 mb-4 d-flex flex-column flex-sm-row align-items-stretch align-items-sm-center justify-content-between row-gap-4"
+>
+  <div
+    class="d-flex flex-column flex-sm-row text-center text-sm-start justify-content-center align-items-center gap-2 gap-sm-4"
+  >
+    <img
+      src="{{ user.image|s3_url('user') }}"
+      alt="{{user.name}} {{user.surname}}"
+      class="avatar lg mx-auto"
+    />
+    <div class="d-flex flex-column gap-2">
+      <div class="d-flex flex-column gap-1 mb-2">
+        <h1 class="fs-2 lh-1">{{user.name}} {{user.surname}}</h1>
+        {% if user.working_on %}
+        <p class="small">
+          <span class="text-secondary"> {{ user.working_on}} </span>
+        </p>
+        {% endif %} {% if user.location %}
+        <p class="small">
+          <i class="fas fa-map-marker-alt mr-2"></i>
+          <span class="text-secondary"> {{ user.location}} </span>
+        </p>
+        {% endif %}
+      </div>
+      {% if user.id != current_user.id %} {{ render_actions(user, current_user)
+      }} {{ render_delete_modal(user) }} {% else %}
+      <a href="/settings"
+        ><button class="btn btn-outline-primary">
+          <span class="small"> Edit profile </span>
+        </button>
+      </a>
+      {% endif %}
+    </div>
+  </div>
 
-	<div class="d-flex flex-sm-column align-items-start">
-		<ul
-			class="d-flex flex-sm-column flex-grow-1 flex-wrap gap-2 text-center">
-			<li
-				class="list-inline-item flex-grow-1 justify-content-center d-flex align-items-center gap-2">
-				<i class="fa-solid fa-comments fs-4"></i>
-				<div>
-					<h5 class="font-weight-bold d-block ">
-						{{ user.total_posts() }}
-					</h5>
-					<small class="text-muted"> Posts </small>
-				</div>
-			</li>
-			<li
-				class="list-inline-item flex-grow-1 justify-content-center d-flex align-items-center gap-2">
-				<i class="fa-solid fa-users fs-4"></i>
-				<div>
-					<h5 class="font-weight-bold d-block ">
-						{{ user.total_friends() }}
-					</h5>
-					<small class="text-muted">Friends</small>
-				</div>
-			</li>
-		</ul>
-	</div>
+  <div class="d-flex flex-sm-column align-items-start">
+    <ul class="d-flex flex-sm-column flex-grow-1 flex-wrap gap-2 text-center">
+      <li
+        class="list-inline-item flex-grow-1 justify-content-center d-flex align-items-center gap-2"
+      >
+        <i class="fa-solid fa-comments fs-4"></i>
+        <div>
+          <h5 class="font-weight-bold d-block">{{ user.total_posts() }}</h5>
+          <small class="text-muted"> Posts </small>
+        </div>
+      </li>
+      <li
+        class="list-inline-item flex-grow-1 justify-content-center d-flex align-items-center gap-2"
+      >
+        <i class="fa-solid fa-users fs-4"></i>
+        <div>
+          <h5 class="font-weight-bold d-block">{{ user.total_friends() }}</h5>
+          <small class="text-muted">Friends</small>
+        </div>
+      </li>
+    </ul>
+  </div>
 </div>
 
 <script>
-	const username = "{{ user.username }}";
-	const addBtn = document.querySelector(".add-btn");
+  const username = '{{ user.username }}';
+  const addBtn = document.querySelector('.add-btn');
 
-	addBtn.addEventListener("click", (e) => {
-		e.preventDefault();
+  addBtn.addEventListener('click', (e) => {
+    e.preventDefault();
 
-		fetch(`/requests/${username}`, {
-			method: "POST",
-		})
-			.then((response) => {
-				if (response.ok) {
-					location.reload();
-				}
-			})
-			.catch((error) => {
-				console.error("Error:", error);
-			});
-	});
+    fetch(`/requests/${username}`, {
+      method: 'POST',
+    })
+      .then((response) => {
+        if (response.ok) {
+          location.reload();
+        }
+      })
+      .catch((error) => {
+        console.error('Error:', error);
+      });
+  });
 
-	const acceptBtn = document.querySelector(".accept-btn");
+  const acceptBtn = document.querySelector('.accept-btn');
 
-	acceptBtn.addEventListener("click", (e) => {
-		e.preventDefault();
+  acceptBtn.addEventListener('click', (e) => {
+    e.preventDefault();
 
-		fetch(`/requests/${username}/accept`, {
-			method: "POST",
-		})
-			.then((response) => {
-				if (response.ok) {
-					location.reload();
-				}
-			})
-			.catch((error) => {
-				console.error("Error:", error);
-			});
-	});
+    fetch(`/requests/${username}/accept`, {
+      method: 'POST',
+    })
+      .then((response) => {
+        if (response.ok) {
+          location.reload();
+        }
+      })
+      .catch((error) => {
+        console.error('Error:', error);
+      });
+  });
 
-	const declineBtn = document.querySelector(".decline-btn");
+  const declineBtn = document.querySelector('.decline-btn');
 
-	declineBtn.addEventListener("click", (e) => {
-		e.preventDefault();
+  declineBtn.addEventListener('click', (e) => {
+    e.preventDefault();
 
-		fetch(`/requests/${username}/decline`, {
-			method: "POST",
-		})
-			.then((response) => {
-				if (response.ok) {
-					location.reload();
-				}
-			})
-			.catch((error) => {
-				console.error("Error:", error);
-			});
-	});
+    fetch(`/requests/${username}/decline`, {
+      method: 'POST',
+    })
+      .then((response) => {
+        if (response.ok) {
+          location.reload();
+        }
+      })
+      .catch((error) => {
+        console.error('Error:', error);
+      });
+  });
 
-	const removeBtn = document.querySelector(".remove-btn");
-	removeBtn.addEventListener("click", (e) => {
-		e.preventDefault();
+  const removeBtn = document.querySelector('.remove-btn');
+  removeBtn.addEventListener('click', (e) => {
+    e.preventDefault();
 
-		fetch(`/friends/${username}/remove`, {
-			method: "DELETE",
-		})
-			.then((response) => {
-				if (response.ok) {
-					location.reload();
-				}
-			})
-			.catch((error) => {
-				console.error("Error:", error);
-			});
-	});
+    fetch(`/friends/${username}/remove`, {
+      method: 'DELETE',
+    })
+      .then((response) => {
+        if (response.ok) {
+          location.reload();
+        }
+      })
+      .catch((error) => {
+        console.error('Error:', error);
+      });
+  });
 </script>
 {% endmacro %}
