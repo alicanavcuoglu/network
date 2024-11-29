@@ -1,8 +1,16 @@
-from flask import session
 from sqlalchemy import and_, case, func, or_, select
 
+from app.models import (
+    Group,
+    Message,
+    Post,
+    User,
+    friends_table,
+    group_admins,
+    group_members,
+    received_requests_table,
+)
 from app.services import db
-from app.models import Message, Post, User, friends_table, received_requests_table
 
 
 # Friends of user
@@ -129,16 +137,6 @@ def has_unread_messages(user_id):
     return unread_count > 0
 
 
-def get_posts_2(user_id):
-    posts = (
-        Post.query.filter(Post.user_id == user_id)
-        .order_by(Post.created_at.desc())
-        .all()
-    )
-
-    return posts
-
-
 def get_user_by_username(username, posts=False):
     query = select(User).filter_by(username=username, is_completed=True)
 
@@ -146,14 +144,6 @@ def get_user_by_username(username, posts=False):
         query.outerjoin(User.posts)
 
     return db.first_or_404(query)
-
-
-# TODO: Get user's groups
-def get_groups(user_id):
-    # groups = select(Group).filter_by(user_id in members)
-    ...
-
-    # return db.first_or_404(query)
 
 
 def get_users(page=1, per_page=10, search_query=None, get_friends=False, user_id=None):
@@ -232,5 +222,132 @@ def get_posts(
         )
         .order_by(Post.created_at.desc())
     )
+
+    return db.paginate(query, page=page, per_page=per_page)
+
+
+def get_groups(page=1, per_page=10, search_query=None, user_id=None):
+    query = select(Group)
+
+    if user_id:
+        query = query.where(
+            or_(
+                Group.owner_id == user_id,
+                Group.id.in_(
+                    select(group_admins.c.group_id).where(
+                        group_admins.c.user_id == user_id
+                    )
+                ),
+                Group.id.in_(
+                    select(group_members.c.group_id).where(
+                        group_members.c.user_id == user_id
+                    )
+                ),
+            )
+        )
+
+    if search_query:
+        search_term = f"%{search_query}%"
+        query = query.where(
+            or_(
+                Group.name.ilike(search_term),
+                Group.about.ilike(search_term),
+            )
+        )
+
+    return db.paginate(
+        query.order_by(Group.created_at.desc()), page=page, per_page=per_page
+    )
+
+
+def get_users_groups(
+    page=1,
+    per_page=10,
+    user_id=None,
+):
+    query = (
+        select(Group)
+        .filter(
+            or_(
+                Group.owner_id == user_id,
+                Group.id.in_(
+                    select(group_admins.c.group_id).filter(
+                        group_admins.c.user_id == user_id
+                    )
+                ),
+                Group.id.in_(
+                    select(group_members.c.group_id).filter(
+                        group_members.c.user_id == user_id
+                    )
+                ),
+            )
+        )
+        .order_by(Group.created_at.desc())
+    )
+
+    return db.paginate(query, page=page, per_page=per_page)
+
+
+def get_group_posts(
+    page=1,
+    per_page=10,
+    group_id=None,
+):
+    query = (
+        select(Post)
+        .join(Post.group)
+        .filter(Post.group_id == group_id)
+        .order_by(Post.created_at.desc())
+    )
+
+    return db.paginate(query, page=page, per_page=per_page)
+
+
+def get_group_admins(
+    page=1,
+    per_page=10,
+    group_id=None,
+):
+    query = select(User).join(group_admins).filter(group_admins.c.group_id == group_id)
+
+    return db.paginate(query, page=page, per_page=per_page)
+
+
+def get_group_members(
+    page=1,
+    per_page=10,
+    group_id=None,
+):
+    query = (
+        select(User).join(group_members).filter(group_members.c.group_id == group_id)
+    )
+
+    return db.paginate(query, page=page, per_page=per_page)
+
+
+def get_users_to_invite(page=1, per_page=10, search_query=None, group_id=None):
+    query = select(User).filter(
+        User.is_completed == True,
+        User.id.not_in(
+            select(group_members.c.user_id).filter(group_members.c.group_id == group_id)
+        ),
+        User.id.not_in(
+            select(group_admins.c.user_id).filter(group_admins.c.group_id == group_id)
+        ),
+        User.id
+        != select(Group.owner_id).filter(Group.id == group_id).scalar_subquery(),
+    )
+
+    if search_query:
+        search_term = f"%{search_query}%"
+        query = query.where(
+            or_(
+                User.name.ilike(search_term),
+                User.surname.ilike(search_term),
+                User.username.ilike(search_term),
+                # For full name
+                func.concat(User.name, " ", User.surname).ilike(search_term),
+            ),
+        )
 
     return db.paginate(query, page=page, per_page=per_page)

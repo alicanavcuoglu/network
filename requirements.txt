@@ -8,3 +8,4 @@ pytz
 requests
 python-dotenv
 boto3
+psycopg2-binary

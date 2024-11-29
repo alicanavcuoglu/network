@@ -3,6 +3,13 @@ from flask import render_template
 from app.routes import errors_bp
 
 
+# @errors_bp.app_errorhandler(400)
+# def bad_request(error):
+#     title = error.description.get("title")
+#     message = error.description.get("message")
+#     print(message)
+#     return render_template("errors/400.html"), 400
+
 @errors_bp.app_errorhandler(401)
 def unauthorized(error):
     return render_template("errors/401.html"), 401

@@ -1,0 +1,145 @@
+{% extends "layout.html" %} {% block title %} Complete your profile {% endblock
+%} {% block main %}
+<form
+	action="{{ url_for('group.create') }}"
+	method="post"
+	enctype="multipart/form-data">
+	<h1 class="fs-4 text-center">Tell about group to others!</h1>
+	<p class="text-center fs-6 fw-lighter">
+		<i>* indicates the field(s) is required.</i>
+	</p>
+	<div class="d-flex mt-4 flex-column gap-3">
+		<div class="row mb-3">
+			<legend class="col-form-label col-md-3 pt-0">Group Image</legend>
+			<div class="row col-md-9">
+				<div
+					class="d-flex flex-column flex-sm-row gap-4 align-items-center">
+					<img
+						id="imagePreview"
+						src="{{ url_for('static', filename='group_placeholder.jpg') }}"
+						alt="avatar"
+						class="avatar" />
+					<div>
+						<div
+							class="d-flex flex-row flex-wrap align-items-center gap-2">
+							<label class="btn btn-outline-primary">
+								Upload new photo
+								<input
+									id="imageInput"
+									type="file"
+									name="image"
+									accept="image/*"
+									class="account-settings-fileinput" />
+							</label>
+							<button
+								id="resetBtn"
+								type="button"
+								class="btn btn-default md-btn-flat">
+								Reset
+							</button>
+						</div>
+
+						<div class="text-black-50 small mt-1">
+							Allowed JPG, JPEG, GIF or PNG. Max size of 1MB
+						</div>
+					</div>
+				</div>
+			</div>
+		</div>
+
+		<div class="row mb-3">
+			<label for="name" class="col-md-3 col-form-label"
+				>Group Name*</label
+			>
+			<div class="col-md-9">
+				<input
+					required
+					type="text"
+					class="form-control"
+					name="name"
+					aria-label="Group Name"
+					placeholder="Coding Ninjas" />
+			</div>
+		</div>
+		<div class="row mb-3">
+			<label for="about" class="col-md-3 col-form-label"
+				>About Group*</label
+			>
+			<div class="col-md-9">
+				<textarea
+					required
+					style="height: 14rem"
+					class="form-control"
+					name="about"
+					aria-label="About Group"
+					placeholder="We're the Coding Ninjas—a band of caffeine-powered developers who turn bugs into features and impossible deadlines into shipped products. We debate tabs vs spaces with the passion of Shakespeare scholars and believe any problem can be solved with one more if statement (kidding!). Some say we speak in algorithms and dream in binary, but really, we're just tech enthusiasts who believe good code can make the world a better place. Together, we're building the future—one commit at a time."></textarea>
+			</div>
+		</div>
+
+		<div class="row mb-3">
+			<label for="privacy" class="col-md-3 col-form-label"
+				>Privacy*</label
+			>
+			<div class="col-md-9">
+				<select
+					required
+					class="form-select"
+					aria-label="Select a privacy option for your group"
+					name="privacy"
+					id="privacy">
+					<option selected disabled>Select a privacy option</option>
+					<option value="public">Public</option>
+					<option value="private">Private</option>
+				</select>
+				<p class="small text-secondary mt-1" id="privacy-info"></p>
+			</div>
+		</div>
+
+		<div class="row mt-3">
+			<button
+				type="submit"
+				class="btn btn-primary w-auto ms-auto"
+				aria-label="Create group">
+				Create group
+			</button>
+		</div>
+	</div>
+</form>
+
+<script>
+	// Get image elements
+	const imagePreview = document.getElementById("imagePreview");
+	const imageInput = document.getElementById("imageInput");
+
+	imageInput.addEventListener("change", (event) => {
+		// Get selected file
+		const file = event.target.files[0];
+
+		// Set uploaded image
+		if (file) {
+			imagePreview.src = URL.createObjectURL(file);
+		}
+	});
+
+	// Get reset button
+	const resetBtn = document.getElementById("resetBtn");
+
+	resetBtn.addEventListener("click", () => {
+		imagePreview.src = "/static/group_placeholder.jpg";
+	});
+
+	// Privacy
+	document.getElementById("privacy").addEventListener("change", function (e) {
+		const privacyInfo = document.getElementById("privacy-info");
+
+		const isPublic = e.target.value === "public";
+		if (isPublic) {
+			privacyInfo.textContent =
+				"Anybody can join to the group. Admins can review participants.";
+		} else {
+			privacyInfo.textContent =
+				"Users can join the group via an invitation from a group member.";
+		}
+	});
+</script>
+{% endblock %}

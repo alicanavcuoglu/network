@@ -1,9 +1,14 @@
 from datetime import datetime, timedelta
 
+import pytz
+
 
 # By ChatGPT
 def format_time_ago(dt: datetime):
-    now = datetime.utcnow()
+    if dt.tzinfo is None:
+        dt = pytz.UTC.localize(dt)
+    now = datetime.now(pytz.UTC)
+    
     diff = now - dt
 
     # Display minutes ago if less than 1 hours
@@ -27,7 +32,10 @@ def format_time_ago(dt: datetime):
 
 
 def format_message_time(dt: datetime):
-    now = datetime.utcnow()
+    if dt.tzinfo is None:
+        dt = pytz.UTC.localize(dt)
+    now = datetime.now(pytz.UTC)
+    
     diff = now - dt
 
     def plural(n: int, word: str):

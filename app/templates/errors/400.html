@@ -1,0 +1,8 @@
+{% extends "layout.html" %} {% block title %}Bad Request{% endblock %} {% block
+main %}
+<div class="text-center py-5 d-flex flex-column gap-3 align-items-center">
+	<h1>{{ title if title else "Bad Request!"}}</h1>
+	<p>{{ message if message else "You can't access this page."}}</p>
+	<a class="btn btn-primary" href="/">Return</a>
+</div>
+{% endblock %}

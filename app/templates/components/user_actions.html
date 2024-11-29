@@ -1,99 +1,225 @@
-{% macro render_actions(user, current_user) %}
+{% macro render_actions(user, current_user, group=None) %}
 <div
-	class="d-flex flex-wrap flex-sm-column flex-md-row align-items-center justify-content-center justify-content-sm-start gap-2">
-	{% if user.id != current_user.id %} {% if user in current_user.friends %}
-	<button
-		class="btn btn-primary msg-btn btn-no-shrink"
-		onclick='redirectToMsg("{{ user.username }}")'>
-		<i class="fa-regular fa-message me-1 small"></i>
-		<span class="small">Message</span>
-	</button>
-	<button
-		class="btn btn-outline-secondary btn-no-shrink"
-		data-bs-toggle="modal"
-		data-bs-target="#removeFriend-{{ user.username }}"
-		data-user-username="{{ user.username }}" onclick="event.preventDefault()">
-		<i class="fa-solid fa-trash me-1 small"></i>
-		<span class="small">Remove</span>
-	</button>
-	{% elif user in current_user.pending_requests %}
-	<button class="btn btn-secondary add-btn btn-no-shrink" disabled>
-		<i class="fa-solid fa-clock me-1 small"></i>
-		<span class="small">Pending</span>
-	</button>
-	{% elif user in current_user.received_requests %}
-	<button
-		class="btn btn-primary accept-btn btn-no-shrink"
-		data-user-username="{{ user.username }}">
-		<i class="fa-solid fa-user-check me-1 small"></i>
-		<span class="small">Accept</span>
-	</button>
-	<button
-		class="btn btn-outline-danger decline-btn btn-no-shrink"
-		data-user-username="{{ user.username }}">
-		<i class="fa-solid fa-x me-1 small"></i>
-		<span class="small">Decline</span>
-	</button>
-	{% else %}
-	<button
-		class="btn btn-outline-primary add-btn btn-no-shrink"
-		data-user-username="{{ user.username }}">
-		<i class="fas fa-plus me-1 small"></i>
-		<span class="small">Add friend</span>
-	</button>
-	{% endif %} {% endif %}
+  class="d-flex flex-wrap flex-sm-column flex-md-row align-items-center justify-content-center justify-content-sm-start gap-2"
+>
+  {% if user.id != current_user.id %}
+  <!-- Group actions -->
+  {% if group %}
+
+  <!-- Is invited? -->
+  {% if user in group.invitations|map(attribute='invitee')|list %}
+  <button class="btn btn-secondary btn-no-shrink" disabled>
+    <i class="fa-solid fa-clock me-1 small"></i>
+    <span class="small">Invited</span>
+  </button>
+
+  <!-- Invite -->
+  {% elif not group.is_member(user) %}
+  <button
+    class="btn btn-outline-primary invite-btn btn-no-shrink"
+    data-user-id="{{ user.id }}"
+    data-group-id="{{ group.id }}"
+  >
+    <i class="fa-solid fa-user-plus me-1 small"></i>
+    <span class="small">Invite</span>
+  </button>
+  {% endif %}
+
+  <!-- Group admin actions -->
+  {% if group.can_remove_user(current_user, user) and group.is_member(user) %}
+  <div class="dropdown ms-2">
+    <button
+      class="btn border"
+      type="button"
+      id="adminDropdown"
+      data-bs-toggle="dropdown"
+      aria-expanded="false"
+    >
+      <i class="fa-solid fa-ellipsis"></i>
+    </button>
+    <ul
+      class="dropdown-menu"
+      aria-labelledby="adminDropdown"
+      onclick="event.preventDefault()"
+    >
+      {% if current_user.id == group.owner_id %} {% if user in group.members %}
+      <li>
+        <button
+          class="dropdown-item"
+          onclick="makeAdmin('{{ group.id }}', '{{ user.id }}')"
+        >
+          Make admin
+        </button>
+      </li>
+      {% elif user in group.admins %}
+      <li>
+        <button
+          class="dropdown-item"
+          onclick="revokeAdmin('{{ group.id }}', '{{ user.id }}')"
+        >
+          Revoke admin
+        </button>
+      </li>
+      {% endif %} {% endif %}
+      <li>
+        <!-- Modal trigger button -->
+        <button
+          type="button"
+          class="dropdown-item"
+          data-bs-toggle="modal"
+          data-bs-target="#adminRemoveUserModal"
+        >
+          Remove user
+        </button>
+      </li>
+    </ul>
+  </div>
+  {% endif %}
+
+  <!-- Friend actions -->
+  {% else %}
+  <!-- Is friend? -->
+  {% if user in current_user.friends %}
+  <button
+    class="btn btn-primary msg-btn btn-no-shrink"
+    onclick='redirectToMsg("{{ user.username }}")'
+  >
+    <i class="fa-regular fa-message me-1 small"></i>
+    <span class="small">Message</span>
+  </button>
+  <button
+    class="btn btn-outline-secondary btn-no-shrink"
+    data-bs-toggle="modal"
+    data-bs-target="#removeFriend-{{ user.username }}"
+    data-user-username="{{ user.username }}"
+    onclick="event.preventDefault()"
+  >
+    <i class="fa-solid fa-trash me-1 small"></i>
+    <span class="small">Remove</span>
+  </button>
+
+  <!-- Is request pending? -->
+  {% elif user in current_user.pending_requests %}
+  <button class="btn btn-secondary add-btn btn-no-shrink" disabled>
+    <i class="fa-solid fa-clock me-1 small"></i>
+    <span class="small">Pending</span>
+  </button>
+
+  <!-- Is received request? -->
+  {% elif user in current_user.received_requests %}
+  <button
+    class="btn btn-primary accept-btn btn-no-shrink"
+    data-user-username="{{ user.username }}"
+  >
+    <i class="fa-solid fa-user-check me-1 small"></i>
+    <span class="small">Accept</span>
+  </button>
+  <button
+    class="btn btn-outline-danger decline-btn btn-no-shrink"
+    data-user-username="{{ user.username }}"
+  >
+    <i class="fa-solid fa-x me-1 small"></i>
+    <span class="small">Decline</span>
+  </button>
+
+  <!-- Add friend -->
+  {% else %}
+  <button
+    class="btn btn-outline-primary add-btn btn-no-shrink"
+    data-user-username="{{ user.username }}"
+  >
+    <i class="fas fa-plus me-1 small"></i>
+    <span class="small">Add friend</span>
+  </button>
+  {% endif %} {% endif %} {% endif %}
 </div>
-<script></script>
 {% endmacro %}
 
 <!-- Delete friend modal -->
 {% macro render_delete_modal(user) %}
 <div
-	class="modal fade"
-	data-user-username="{{ user.username }}"
-	tabindex="-1"
-	id="removeFriend-{{ user.username }}"
-	aria-labelledby="removeFriendLabel-{{ user.username }}"
-	aria-hidden="true">
-	<div class="modal-dialog modal-dialog-centered">
-		<div class="modal-content">
-			<div class="container">
-				<div class="modal-header">
-					<h5
-						class="modal-title"
-						id="removeFriendLabel-{{ user.username }}">
-						Remove Friend?
-					</h5>
-					<button
-						type="button"
-						class="btn-close"
-						data-bs-dismiss="modal"
-						aria-label="Close"></button>
-				</div>
-				<div class="modal-body">
-					Are you sure you want to remove this user from your friends?
-				</div>
-				<div class="modal-footer">
-					<button
-						type="button"
-						class="btn btn-secondary"
-						data-bs-dismiss="modal">
-						Cancel
-					</button>
-					<button type="button" class="btn btn-danger remove-btn">
-						Remove
-					</button>
-				</div>
-			</div>
-		</div>
-	</div>
+  class="modal fade"
+  data-user-username="{{ user.username }}"
+  tabindex="-1"
+  id="removeFriend-{{ user.username }}"
+  aria-labelledby="removeFriendLabel-{{ user.username }}"
+  aria-hidden="true"
+>
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="container">
+        <div class="modal-header">
+          <h5 class="modal-title" id="removeFriendLabel-{{ user.username }}">
+            Remove Friend?
+          </h5>
+          <button
+            type="button"
+            class="btn-close"
+            data-bs-dismiss="modal"
+            aria-label="Close"
+          ></button>
+        </div>
+        <div class="modal-body">
+          Are you sure you want to remove this user from your friends?
+        </div>
+        <div class="modal-footer">
+          <button
+            type="button"
+            class="btn btn-secondary"
+            data-bs-dismiss="modal"
+          >
+            Cancel
+          </button>
+          <button type="button" class="btn btn-danger remove-btn">
+            Remove
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
 </div>
+{% endmacro %}
 
-<script>
-	function redirectToMsg(username) {
-		event.preventDefault();
-
-		window.location.href = `/messages/${username}`
-	}
-</script>
+<!-- Remove user from group modal -->
+{% macro render_remove_user_modal(user, group) %}
+<!-- Modal Body -->
+<div
+  class="modal fade"
+  id="adminRemoveUserModal"
+  tabindex="-1"
+  role="dialog"
+  aria-labelledby="adminRemoveUserTitle"
+  aria-hidden="true"
+>
+  <div
+    class="modal-dialog modal-dialog-scrollable modal-dialog-centered"
+    role="document"
+  >
+    <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="adminRemoveUserTitle">Remove User</h5>
+          <button
+            type="button"
+            class="btn-close"
+            data-bs-dismiss="modal"
+            aria-label="Close"
+          ></button>
+        </div>
+        <div class="modal-body">
+          Are you sure you want to remove {{ user.name }} {{ user.surname }}
+          from the group?
+        </div>
+        <div class="modal-footer">
+          <button
+            type="button"
+            class="btn btn-secondary"
+            data-bs-dismiss="modal"
+          >
+            Close
+          </button>
+          <button type="submit" class="btn btn-danger" onclick="removeUserFromGroup('{{ group.id }}', '{{ user.id }}')">Remove</button>
+        </div>
+    </div>
+  </div>
+</div>
 {% endmacro %}

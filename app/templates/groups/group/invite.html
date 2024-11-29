@@ -1,0 +1,70 @@
+{% extends "layout.html" %} {% from 'components/user_card.html' import card %}
+{% block title %} Invite to {{ group.name }} {% endblock %}
+{% block main %}
+<!-- SEARCH -->
+<div
+	class="mb-3 d-flex flex-column-reverse flex-sm-row align-items-md-center align-items-stretch gap-2">
+	<form
+		action="{{ url_for('group.invite', id=group.id) }}"
+		method="get"
+		class="flex-grow-1">
+		<div class="input-group">
+			<button class="btn btn-outline-secondary" type="submit">
+				<i class="fa-solid fa-magnifying-glass"></i>
+			</button>
+
+			<input
+				type="text"
+				name="q"
+				value="{{ search_query if search_query }}"
+				class="form-control"
+				placeholder="Search for people..." />
+		</div>
+	</form>
+</div>
+
+<!-- PROFILES -->
+<ul class="list-group flex-grow-1">
+	<!-- Display users -->
+	{% if users %} 
+	{% for user in users %} {{ card(user, current_user, actions=False, group=group) }} {%
+	endfor %} 
+	{% else %}
+	<div class="profile-div-wrapper">
+		<h3>No users found</h3>
+		<p class="mb-2 text-secondary">
+			We couldn't find any users matching your search criteria.
+		</p>
+	</div>
+	{% endif %}
+</ul>
+
+<!-- Pagination -->
+<nav aria-label="Profiles navigation" class="mt-auto pt-3">
+	<ul class="pagination d-flex justify-content-center">
+		<li class="page-item {% if not pagination.has_prev %}disabled{% endif %}">
+			<a class="page-link" href="{{ url_for('group.invite', id=group.id, page=page-1, q=search_query)}}" aria-label="Previous">
+				<span aria-hidden="true">&laquo;</span>
+			</a>
+		</li>
+		{% for page in pagination.iter_pages() %} {% if page %}
+		<li class="page-item {% if page == pagination.page %}active{% endif %}">
+			<a
+				class="page-link"
+				href="{{ url_for('group.invite', id=group.id, page=page, q=search_query) }}">
+				{{ page }}
+			</a>
+		</li>
+		{% else %}
+		<li class="page-item disabled">
+			<span class="page-link">...</span>
+		</li>
+		{% endif %} {% endfor %}
+		<li class="page-item {% if not pagination.has_next %}disabled{% endif %}">
+			<a class="page-link" href="{{ url_for('group.invite', id=group.id, page=page+1, q=search_query) }}" aria-label="Next">
+				<span aria-hidden="true">&raquo;</span>
+			</a>
+		</li>
+	</ul>
+</nav>
+{% endblock %}

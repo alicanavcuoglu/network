@@ -1,0 +1,41 @@
+{% extends "components/group_cover.html" %} {% import "components/post.html" as
+postings %}
+
+<!-- Title -->
+{% block title %}About {{ group.name }}{% endblock %}
+
+<!-- Block starts here -->
+{% block content %}
+
+<!-- Content -->
+<div class="mb-4 d-flex flex-column gap-2">
+	<h2 class="fs-4">About this group</h2>
+	<p class="text-muted">{{group.about}}</p>
+</div>
+<div class="mb-4 d-flex flex-column gap-3">
+	<div class="d-flex align-items-center gap-3">
+		<i
+			class="fa-solid {% if group.group_type.value == 'private' %}fa-lock{% else %}fa-earth-americas{% endif %} text-secondary fs-3"></i>
+		<div>
+			<h3 class="fs-5 text-capitalize">
+				{{ group.group_type.value }} group
+			</h3>
+			<p class="text-muted small">
+				{{ "Only members can see who's in the group and what they post."
+				if group.group_type.value == "private" else "Anyone can see
+				who's in the group and what they post."}}
+			</p>
+		</div>
+	</div>
+	<div class="d-flex align-items-center gap-3">
+		<i class="fa-solid fa-calendar-check text-secondary fs-3"></i>
+		<div>
+			<h3 class="fs-5 text-capitalize">Founded On</h3>
+			<p class="text-muted small">
+				{{ group.created_at.strftime('%B %d, %Y') }}
+			</p>
+		</div>
+	</div>
+</div>
+
+{% endblock %}

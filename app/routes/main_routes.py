@@ -8,7 +8,6 @@ from flask import (
     session,
     url_for,
 )
-from sqlalchemy import select
 from werkzeug.security import check_password_hash, generate_password_hash
 
 from app.extensions import db
@@ -35,15 +34,14 @@ from app.services.notifications import (
 )
 from app.services.queries import (
     get_community_posts,
-    get_feed_posts,
     get_friends,
-    get_groups,
     get_latest_conversations,
     get_posts,
     get_requests,
     get_user_by_username,
     get_user_posts,
     get_users,
+    get_users_groups,
 )
 from app.utils.helpers import (
     allowed_file,
@@ -59,7 +57,7 @@ def user_list():
     page = request.args.get("page", 1, type=int)
     search_query = request.args.get("q")
 
-    # Get all users
+    # Get users
     users = get_users(search_query=search_query, page=page)
 
     return render_template(
@@ -141,11 +139,18 @@ def user_profile_groups(username):
             "users/profile/groups.html", user=user, groups=[], can_view=False
         )
 
-    # TODO: Get user's groups
-    groups = get_groups(user.id)
+    page = request.args.get("page", 1, type=int)
+
+    # Get user's groups
+    groups = get_users_groups(user_id=user.id, page=page)
 
     return render_template(
-        "users/profile/groups.html", user=user, groups=[], can_view=True
+        "users/profile/groups.html",
+        user=user,
+        groups=groups.items,
+        can_view=True,
+        page=page,
+        pagination=groups,
     )
 
 
@@ -166,6 +171,8 @@ def user_delete(id):
     if user.id != session["user_id"]:
         return abort(401)
 
+    delete_file_from_s3(user.image)
+
     db.session.delete(user)
     db.session.commit()
     session.clear()
@@ -178,7 +185,7 @@ def general_settings():
     name = request.form["name"]
     surname = request.form["surname"]
     email = request.form["email"]
-    is_private = request.form["is_private"]
+    is_private = request.form.get("is_private")
     delete_image = True if request.form["delete_image"] == "true" else False
 
     # Get user
@@ -211,6 +218,7 @@ def general_settings():
         if not allowed_file(image.filename):
             return abort(422)
 
+        delete_file_from_s3(current_user.image)
         image_path = upload_file_to_s3(image)
         current_user.image = image_path
 
@@ -426,6 +434,7 @@ def reshare_post(id):
 @main_bp.route("/post/delete/<id>", methods=["DELETE"])
 def delete_post(id):
     post = Post.query.get_or_404(id)
+    print(f"DELETING POST: {post}")
 
     if not post:
         flash("Can't delete the post!", "error")

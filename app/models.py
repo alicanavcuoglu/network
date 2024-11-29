@@ -1,6 +1,6 @@
 import enum
 from datetime import datetime
-from typing import List
+from typing import List, Optional
 
 from sqlalchemy import (
     Boolean,
@@ -41,6 +41,21 @@ received_requests_table = Table(
     db.Model.metadata,
     Column("user_id", Integer, ForeignKey("user.id")),
     Column("request_id", Integer, ForeignKey("user.id")),
+)
+
+# Association table for group members
+group_members = Table(
+    "members",
+    db.Model.metadata,
+    Column("user_id", Integer, ForeignKey("user.id")),
+    Column("group_id", Integer, ForeignKey("group.id")),
+)
+
+group_admins = Table(
+    "admins",
+    db.Model.metadata,
+    Column("user_id", Integer, ForeignKey("user.id")),
+    Column("group_id", Integer, ForeignKey("group.id")),
 )
 
 
@@ -98,6 +113,31 @@ class User(db.Model):
         back_populates="user", cascade="all, delete"
     )
 
+    # One-to-Many relationship for user's groups
+    owned_groups: Mapped[List["Group"]] = relationship(
+        back_populates="owner", lazy=True, cascade="all, delete"
+    )
+
+    # Many-to-Many relationship for group's admins
+    admin_in: Mapped[List["Group"]] = relationship(
+        secondary=group_admins, lazy="dynamic", back_populates="admins"
+    )
+
+    # Many-to-Many relationship for group's members
+    member_in: Mapped[List["Group"]] = relationship(
+        secondary=group_members, lazy="dynamic", back_populates="members"
+    )
+
+    # Sent invitations
+    sent_invitations: Mapped[List["Invitation"]] = relationship(
+        foreign_keys="[Invitation.inviter_id]", back_populates="inviter"
+    )
+
+    # Received invitations
+    received_invitations: Mapped[List["Invitation"]] = relationship(
+        foreign_keys="[Invitation.invitee_id]", back_populates="invitee"
+    )
+
     def __repr__(self) -> str:
         return super().__repr__()
 
@@ -117,6 +157,8 @@ class Post(db.Model):
     user_id: Mapped[int] = mapped_column(ForeignKey("user.id"), nullable=False)
     # Reshare
     parent_id: Mapped[int] = mapped_column(ForeignKey("post.id"), nullable=True)
+    # Group post
+    group_id: Mapped[int] = mapped_column(ForeignKey("group.id"), nullable=True)
 
     content: Mapped[str] = mapped_column(Text, nullable=False)
     shares: Mapped[int] = mapped_column(Integer, default=0)
@@ -130,16 +172,23 @@ class Post(db.Model):
 
     # Comments
     comments: Mapped[List["Comment"]] = relationship(
-        back_populates="post", cascade="all, delete-orphan"
+        back_populates="post",
+        cascade="all, delete-orphan",
+        order_by="desc(Comment.created_at)",
     )
 
-    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=func.now())
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=func.now()
+    )
     updated_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), default=func.now(), onupdate=func.now()
     )
 
     user: Mapped["User"] = relationship("User", back_populates="posts")
     original_post: Mapped["Post"] = relationship("Post", remote_side=[id])
+
+    # Group relation
+    group: Mapped["Group"] = relationship("Group", back_populates="posts")
 
     def __repr__(self) -> str:
         return f"<Post {self.id} by User {self.user_id}>"
@@ -154,7 +203,7 @@ class Post(db.Model):
         return len(self.comments)
 
     def latest_comments(self, limit=3):
-        return sorted(self.comments, key=lambda x: x.created_at)[:limit]
+        return self.comments[:limit]
 
 
 # Comment model
@@ -164,7 +213,9 @@ class Comment(db.Model):
     post_id: Mapped[int] = mapped_column(ForeignKey("post.id"), nullable=False)
 
     content: Mapped[str] = mapped_column(Text, nullable=False)
-    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=func.now())
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=func.now()
+    )
 
     post: Mapped["Post"] = relationship(back_populates="comments")
     user: Mapped["User"] = relationship()
@@ -192,7 +243,9 @@ class Like(db.Model):
     post_id: Mapped[int] = mapped_column(ForeignKey("post.id"), nullable=True)
     comment_id: Mapped[int] = mapped_column(ForeignKey("comment.id"), nullable=True)
 
-    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=func.now())
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=func.now()
+    )
 
     # One of post_id or comment_id must be filled
     __table_args__ = (
@@ -208,7 +261,7 @@ class Like(db.Model):
         back_populates="likes", foreign_keys=[comment_id]
     )
 
-    user: Mapped["User"] = relationship()
+    user: Mapped["User"] = relationship(back_populates="likes")
 
     def __repr__(self) -> str:
         return f"<Like {self.id} by User {self.user_id}>"
@@ -220,7 +273,9 @@ class Message(db.Model):
     sender_id: Mapped[int] = mapped_column(ForeignKey("user.id"), nullable=False)
     recipient_id: Mapped[int] = mapped_column(ForeignKey("user.id"), nullable=False)
     content: Mapped[str] = mapped_column(Text, nullable=False)
-    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=func.now())
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=func.now()
+    )
     is_read: Mapped[bool] = mapped_column(Boolean, default=False)
 
     sender: Mapped["User"] = relationship(
@@ -257,6 +312,7 @@ class NotificationEnum(enum.Enum):
     POST_COMMENT = "post_comment"
     POST_SHARE = "post_share"
     COMMENT_LIKE = "comment_like"
+    # TODO: Add new notification enum
 
 
 class Notification(db.Model):
@@ -269,11 +325,13 @@ class Notification(db.Model):
         nullable=False,
     )
 
-    post_id: Mapped[int] = mapped_column(ForeignKey("post.id"), nullable=True)
+    post_id: Mapped[int] = mapped_column(ForeignKey("post.id", ondelete="CASCADE"), nullable=True)
     comment_id: Mapped[int] = mapped_column(ForeignKey("comment.id"), nullable=True)
 
     is_read: Mapped[bool] = mapped_column(Boolean, default=False)
-    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=func.now())
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=func.now()
+    )
 
     # Relationships
     recipient: Mapped["User"] = relationship(
@@ -300,3 +358,130 @@ class Notification(db.Model):
             "post_id": self.post_id,
             "comment_id": self.comment_id,
         }
+
+
+class GroupType(enum.Enum):
+    PRIVATE = "private"
+    PUBLIC = "public"
+
+
+class GroupRole(enum.Enum):
+    OWNER = "owner"
+    ADMIN = "admin"
+    MEMBER = "member"
+
+
+class Group(db.Model):
+    id: Mapped[int] = mapped_column(primary_key=True)
+    owner_id: Mapped[int] = mapped_column(ForeignKey("user.id"), nullable=False)
+    image: Mapped[str] = mapped_column(String(300), nullable=True)
+    name: Mapped[str] = mapped_column(Text, nullable=False)
+    about: Mapped[str] = mapped_column(Text, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=func.now()
+    )
+
+    group_type: Mapped[GroupType] = mapped_column(
+        Enum(GroupType, values_callable=lambda obj: [e.value for e in obj]),
+        nullable=False,
+    )
+
+    owner: Mapped["User"] = relationship(back_populates="owned_groups")
+
+    # Many-to-Many relationship for admins
+    admins: Mapped[List["User"]] = relationship(
+        secondary=group_admins,
+        primaryjoin="Group.id == admins.c.group_id",
+        secondaryjoin="User.id == admins.c.user_id",
+        back_populates="admin_in",
+        lazy="dynamic",
+    )
+
+    # Many-to-Many relationship for members
+    members: Mapped[List["User"]] = relationship(
+        secondary=group_members,
+        primaryjoin="Group.id == members.c.group_id",
+        secondaryjoin="User.id == members.c.user_id",
+        back_populates="member_in",
+        lazy="dynamic",
+    )
+
+    invitations: Mapped[List["Invitation"]] = relationship(
+        back_populates="group", lazy=True, cascade="all, delete"
+    )
+
+    # Posts relationship
+    posts: Mapped[List["Post"]] = relationship(
+        back_populates="group",
+        lazy="dynamic",
+        cascade="all, delete",
+        order_by="desc(Post.created_at)",
+    )
+
+    def __repr__(self):
+        return f"<Group {self.id} by {self.owner_id}>"
+
+    def can_post(self, user: User) -> bool:
+        return user == self.owner or user in self.admins or user in self.members
+
+    def total_posts(self) -> int:
+        return len(self.posts)
+
+    # Check if a user can remove another user or post from the group
+    def can_remove_user(self, user: User, target_user: User) -> bool:
+        if user == self.owner:
+            return target_user != self.owner
+
+        elif user in self.admins:
+            return (
+                target_user != self.owner
+                and target_user not in self.admins
+                and target_user in self.members
+            )
+            
+        return False
+
+    # Remove a user from the group
+    def remove_user(self, user: User):
+        if user in self.admins:
+            self.admins.remove(user)
+        if user in self.members:
+            self.members.remove(user)
+
+    def can_view(self, user: User) -> bool:
+        return (
+            self.group_type == GroupType.PUBLIC
+            or user == self.owner
+            or user in self.admins
+            or user in self.members
+        )
+
+    def get_admins(self, limit=3):
+        return self.admins[:limit]
+
+    def get_members(self, limit=10):
+        return self.members[:limit]
+
+    def has_pending_invitation(self, user: User) -> bool:
+        return any(invitation.invitee_id == user.id for invitation in self.invitations)
+
+    def is_member(self, user: User) -> bool:
+        return self.owner_id == user.id or user in self.admins or user in self.members
+
+
+class Invitation(db.Model):
+    id: Mapped[int] = mapped_column(primary_key=True)
+    group_id: Mapped[int] = mapped_column(ForeignKey("group.id"), nullable=False)
+    inviter_id: Mapped[int] = mapped_column(ForeignKey("user.id"), nullable=False)
+    invitee_id: Mapped[int] = mapped_column(ForeignKey("user.id"), nullable=False)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=func.now()
+    )
+
+    group: Mapped["Group"] = relationship(back_populates="invitations")
+    inviter: Mapped["User"] = relationship(
+        foreign_keys=[inviter_id], back_populates="sent_invitations"
+    )
+    invitee: Mapped["User"] = relationship(
+        foreign_keys=[invitee_id], back_populates="received_invitations"
+    )

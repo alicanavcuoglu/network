@@ -1,0 +1,77 @@
+{% extends "components/group_cover.html" %} {% import "components/post.html" as
+postings %}
+
+<!-- Title -->
+{% block title %} {{ group.name }}{% endblock %}
+
+<!-- Block starts here -->
+{% block content %}
+
+<!-- Content -->
+{% if group.can_view(current_user) %} {% if group.can_post(current_user) %} {{
+postings.create_post(current_user, group) }} {% endif %}
+<div class="posts-wrapper">
+	{% if posts | length > 0 %} {% for post in posts %} {{postings.post(post,
+	current_user)}} {% endfor %}
+</div>
+
+<!-- Pagination -->
+<nav aria-label="Group's posts" class="mt-auto pt-3">
+	<ul class="pagination d-flex justify-content-center">
+		<li
+			class="page-item {% if not pagination.has_prev %}disabled{% endif %}">
+			<a
+				class="page-link"
+				href="{{ url_for('group.page', id=group.id, page=page-1)}}"
+				aria-label="Previous">
+				<span aria-hidden="true">&laquo;</span>
+			</a>
+		</li>
+		{% for page in pagination.iter_pages() %} {% if page %}
+		<li class="page-item {% if page == pagination.page %}active{% endif %}">
+			<a
+				class="page-link"
+				href="{{ url_for('group.page', id=group.id, page=page) }}">
+				{{ page }}
+			</a>
+		</li>
+		{% else %}
+		<li class="page-item disabled">
+			<span class="page-link">...</span>
+		</li>
+		{% endif %} {% endfor %}
+		<li
+			class="page-item {% if not pagination.has_next %}disabled{% endif %}">
+			<a
+				class="page-link"
+				href="{{ url_for('group.page', id=group.id, page=page+1) }}"
+				aria-label="Next">
+				<span aria-hidden="true">&raquo;</span>
+			</a>
+		</li>
+	</ul>
+</nav>
+
+{% else %}
+<div class="profile-div-wrapper">
+	<div class="icon-box border">
+		<i class="fa-solid fa-comments fs-1 text-muted"></i>
+	</div>
+	<h3>No posts in this group yet</h3>
+	<p class="mb-2 text-secondary">
+		This group is just getting started. Once members begin sharing, their
+		posts will appear here. Be the first to spark a conversation!
+	</p>
+</div>
+{% endif %} {% else %}
+<div class="profile-div-wrapper">
+	<div class="icon-box border rounded-circle">
+		<i class="fa-solid fa-lock fs-1 text-muted"></i>
+	</div>
+	<h3>This group is private</h3>
+	<p class="mb-2 text-secondary">
+		To view posts in this group, you need to become a member. If you know
+		someone in the group, you can ask them to send you an invitation.
+	</p>
+</div>
+{% endif %} {% endblock %}

@@ -1,0 +1,219 @@
+{% extends "layout.html" %}
+
+<!-- Import card -->
+{% from "components/user_card.html" import card %}
+
+<!-- Title -->
+{% block title %}Group Settings{% endblock %}
+
+<!-- Main block -->
+{%
+block main %}
+<h2 class="mb-4">Group Settings</h2>
+<div class="row no-gutters row-bordered row-border-light">
+	<div class="col-md-3 pt-0 mb-4">
+		<div class="list-group list-group-flush account-settings-links">
+			<button class="list-group-item list-group-item-action active" data-bs-toggle="tab" data-bs-target="#group-general"
+				type="button" role="tab" aria-controls="general" aria-selected="true">
+				General
+			</button>
+			<button class="list-group-item list-group-item-action" data-bs-toggle="tab" data-bs-target="#group-members"
+				type="button" role="tab" aria-controls="members" aria-selected="false">
+				Members
+			</button>
+			{% if current_user == group.owner %}
+			<button class="list-group-item list-group-item-action text-danger" data-bs-toggle="tab"
+				data-bs-target="#delete-group" type="button" role="tab" aria-controls="delete" aria-selected="false">
+				Delete group
+			</button>
+			{% endif %}
+		</div>
+	</div>
+	<div class="col-md-9">
+		<div class="tab-content">
+			<!-- General Settings -->
+			<div class="tab-pane fade active show" id="group-general">
+				<form action="{{ url_for('group.settings', id=group.id) }}" method="post" enctype="multipart/form-data">
+					<div class="d-flex flex-column flex-sm-row gap-4 align-items-center">
+						<input type="hidden" name="delete_image" id="delete_image" value="false" />
+						<img id="imagePreview"
+							src="{{ group.image if group.image else url_for('static', filename='group_placeholder.jpg') }}"
+							alt="avatar" class="avatar" />
+						<div>
+							<div class="d-flex flex-row flex-wrap align-items-center gap-2">
+								<label class="btn btn-outline-primary">
+									Upload new photo
+									<input id="imageInput" name="image" type="file" value="{{ group.image }}"
+										class="account-settings-fileinput" accept="image/*" />
+								</label>
+								<button id="resetBtn" type="button" class="btn btn-default md-btn-flat">
+									Reset
+								</button>
+							</div>
+							<div class="text-black-50 small mt-1">
+								Allowed JPG, JPEG, GIF or PNG. Max size of 1MB
+							</div>
+						</div>
+					</div>
+					<hr class="my-3 text-black-50" />
+					<div class="form-group mb-3">
+						<label class="form-label">Group Name</label>
+						<input type="text" class="form-control" name="name" value="{{ group.name }}" required
+							placeholder="Coding Ninjas" />
+					</div>
+					<div class="form-group mb-3">
+						<label class="form-label">About</label>
+						<textarea class="form-control" name="about" rows="10" required
+							placeholder="We're the Coding Ninjas—a band of caffeine-powered developers who turn bugs into features and impossible deadlines into shipped products. We debate tabs vs spaces with the passion of Shakespeare scholars and believe any problem can be solved with one more if statement (kidding!). Some say we speak in algorithms and dream in binary, but really, we're just tech enthusiasts who believe good code can make the world a better place. Together, we're building the future—one commit at a time.">{{ group.about }}</textarea>
+					</div>
+					<div class="form-group mb-3">
+						<label class="form-label">Group Privacy</label>
+						<!-- prettier-ignore-start -->
+						<select required class="form-select" aria-label="Select a privacy option for your group" name="privacy"
+							id="privacy">
+							<option disabled>Select a privacy option</option>
+							<option value="public" {% if group.group_type.value=='public' %}selected{% endif %}>Public</option>
+							<option value="private" {% if group.group_type.value=='private' %}selected{% endif %}>Private</option>
+						</select>
+						<!-- prettier-ignore-end -->
+						<p class="small text-secondary mt-1" id="privacy-info">
+							{{ "Users can join the group via an invitation from a group member." if group.group_type.value ==
+							"private" else
+							"Anybody can join to the group. Admins can review participants." }}
+						</p>
+					</div>
+					<div class="text-end mt-3">
+						<button type="submit" class="btn btn-primary">
+							Save changes
+						</button>
+					</div>
+				</form>
+			</div>
+			<!-- Members Management -->
+			<div class="tab-pane fade" id="group-members">
+				<div class="card mb-4">
+					<div class="card-header">
+						<h5 class="card-title mb-0">Owner</h5>
+					</div>
+					<div class="card-body">
+						{{ card(current_user, current_user, actions=False, group=group) }}
+					</div>
+				</div>
+				<div class="card mb-4">
+					<div class="card-header d-flex justify-content-between align-items-center">
+						<h5 class="card-title mb-0">Admins</h5>
+						<a href="{{ url_for('group.all_admins', id=group.id) }}" class="btn btn-secondary btn-sm">See all ({{
+							group.admins.count() }})</a>
+					</div>
+					<div class="card-body list-group list-group-flush p-0">
+						{% for admin in group.get_admins() %}
+						{{ card(current_user, current_user, actions=False, group=group) }}
+						{% endfor %}
+					</div>
+				</div>
+				<div class="card">
+					<div class="card-header d-flex justify-content-between align-items-center">
+						<h5 class="card-title mb-0">Members</h5>
+						<a href="{{ url_for('group.all_members', id=group.id) }}" class="btn btn-secondary btn-sm">See all ({{
+							group.members.count() }})</a>
+					</div>
+					<div class="card-body list-group list-group-flush p-0">
+						{% for member in group.get_members() %}
+						{{ card(member, current_user, actions=False, group=group) }}
+						{% endfor %}
+					</div>
+				</div>
+			</div>
+			<!-- Delete Group -->
+			{% if current_user == group.owner %}
+			<div class="tab-pane fade" id="delete-group">
+				<div class="alert alert-danger">
+					<h4 class="mb-1">Delete Group</h4>
+					<p class="mb-1">
+						Are you sure you want to delete this group? This action
+						cannot be undone and will:
+					</p>
+					<ul>
+						<li>Delete all group posts and content</li>
+						<li>Remove all members and admins</li>
+						<li>Delete all group data permanently</li>
+					</ul>
+				</div>
+				<!-- Modal trigger button -->
+				<button type="button" class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#delete-group-modal">
+					Delete group
+				</button>
+			</div>
+
+			<!-- Delete Group Modal -->
+			<!-- Modal Body -->
+			<div class="modal fade" id="delete-group-modal" tabindex="-1" role="dialog" aria-labelledby="delete-modal"
+				aria-hidden="true">
+				<div class="modal-dialog modal-dialog-scrollable modal-dialog-centered" role="document">
+					<div class="modal-content">
+						<div class="modal-header">
+							<h5 class="modal-title">
+								Delete Group?
+							</h5>
+							<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+						</div>
+						<div class="modal-body">Are you sure you want to delete this group? This action
+							cannot be undone.</div>
+						<div class="modal-footer">
+							<button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+								Close
+							</button>
+							<form action="{{ url_for('group.delete_group', id=group.id) }}" method="post">
+								<button type="submit" class="btn btn-danger">
+									Yes, delete this group
+								</button>
+							</form>
+						</div>
+					</div>
+				</div>
+			</div>
+
+
+			{% endif %}
+		</div>
+	</div>
+</div>
+<script>
+	// Get image elements
+	const imagePreview = document.getElementById("imagePreview");
+	const imageInput = document.getElementById("imageInput");
+
+	imageInput.addEventListener("change", (event) => {
+		// Get selected file
+		const file = event.target.files[0];
+
+		// Set uploaded image
+		if (file) {
+			imagePreview.src = URL.createObjectURL(file);
+		}
+	});
+
+	// Get reset button
+	const resetBtn = document.getElementById("resetBtn");
+
+	resetBtn.addEventListener("click", () => {
+		imagePreview.src = "/static/group_placeholder.jpg";
+		document.getElementById("delete_image").value = "true";
+	});
+
+	// Update privacy info on change
+	document
+		.getElementById("privacy")
+		.addEventListener("change", function () {
+			const privacyInfo = document.getElementById("privacy-info");
+
+			if (this.value === "private") {
+				privacyInfo.textContent =
+					"Users can join the group via an invitation from a group member.";
+			} else {
+				privacyInfo.textContent =
+					"Anybody can join to the group. Admins can review participants.";
+			}
+		});
+</script>
+{% endblock %}

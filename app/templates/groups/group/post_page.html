@@ -1,0 +1,10 @@
+{% extends "components/group_cover.html" %}
+{% import "components/post.html" as postings %}
+
+<!-- Title -->
+{% block title %}{{ post.user.name }} {{ post.user.surname }}'s post in {{ group.name}}{% endblock %}
+
+<!-- Block starts here -->
+{% block content %}
+{{ postings.post(post, current_user) }}
+{% endblock %}

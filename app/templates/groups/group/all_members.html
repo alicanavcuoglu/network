@@ -1,0 +1,78 @@
+{% extends "components/group_cover.html" %}
+
+<!-- Title -->
+{% block title %}Admin's of {{ group.name }}{% endblock %}
+
+<!-- Block starts here -->
+{% block content %}
+
+<!-- Content -->
+{% if group.can_view(current_user) %} {% if members %}
+<div class="mb-4 d-flex flex-column align-items-start gap-2">
+	<h2 class="fs-4">Members</h2>
+	<div class="list-group">
+		{% for member in members %} {{ card(member, current_user, actions=False, group=group) }} {%
+		endfor %}
+	</div>
+</div>
+
+<!-- Pagination -->
+<nav aria-label="Group's admins" class="mt-auto pt-3">
+	<ul class="pagination d-flex justify-content-center">
+		<li
+			class="page-item {% if not pagination.has_prev %}disabled{% endif %}">
+			<a
+				class="page-link"
+				href="{{ url_for('group.all_members', id=group.id, page=page-1)}}"
+				aria-label="Previous">
+				<span aria-hidden="true">&laquo;</span>
+			</a>
+		</li>
+		{% for page in pagination.iter_pages() %} {% if page %}
+		<li class="page-item {% if page == pagination.page %}active{% endif %}">
+			<a
+				class="page-link"
+				href="{{ url_for('group.all_members', id=group.id, page=page) }}">
+				{{ page }}
+			</a>
+		</li>
+		{% else %}
+		<li class="page-item disabled">
+			<span class="page-link">...</span>
+		</li>
+		{% endif %} {% endfor %}
+		<li
+			class="page-item {% if not pagination.has_next %}disabled{% endif %}">
+			<a
+				class="page-link"
+				href="{{ url_for('group.all_members', id=group.id, page=page+1) }}"
+				aria-label="Next">
+				<span aria-hidden="true">&raquo;</span>
+			</a>
+		</li>
+	</ul>
+</nav>
+
+{% else %}
+<div class="profile-div-wrapper">
+	<div class="icon-box border">
+		<i class="fa-solid fa-users fs-1 text-muted"></i>
+	</div>
+	<h3>No members in this group yet</h3>
+	<p class="mb-2 text-secondary">
+		This group is just getting started. Invite people to join and help grow
+		the community!
+	</p>
+</div>
+{% endif %} {% else %}
+<div class="profile-div-wrapper">
+	<div class="icon-box border rounded-circle">
+		<i class="fa-solid fa-lock fs-1 text-muted"></i>
+	</div>
+	<h3>This group is private</h3>
+	<p class="mb-2 text-secondary">
+		To view members in this group, you need to become a member. If you know
+		someone in the group, you can ask them to send you an invitation.
+	</p>
+</div>
+{% endif %} {% endblock %}

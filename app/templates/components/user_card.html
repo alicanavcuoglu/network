@@ -1,61 +1,76 @@
 {% from "components/user_actions.html" import render_actions,
-render_delete_modal %} {% macro card(user, current_user, actions = True) %}
+render_delete_modal, render_remove_user_modal %} {% macro card(user, current_user,
+actions = True, group = None) %}
 <a
-	href="{{ url_for('main.user_profile', username=user.username) }}"
-	class="list-group-item list-group-item-action">
-	<div
-		class="d-flex flex-column flex-sm-row gap-2 align-sm-items-center justify-content-between py-2 gap-3">
-		<div
-			class="d-flex flex-column flex-sm-row align-items-center align-items-sm-start text-center text-sm-start">
-			<img
-				src="{{ user.image if user.image else url_for('static', filename='placeholder.jpg')}}"
-				alt="{{ user.username }}"
-				class="avatar md" />
-			<div class="d-flex flex-column ms-2 mt-2px text-black gap-2">
-				<div class="d-flex flex-column">
-					<h4 class="fs-6">{{ user.name }} {{ user.surname }}</h4>
-					{% if user.working_on %}
-					<p class="small">
-						<span class="text-secondary user-working-preview">
-							{{ user.working_on}}
-						</span>
-					</p>
-					{% endif %} {% if user.location %}
-					<p class="small">
-						<i class="fas fa-map-marker-alt mr-2"></i>
-						<span class="text-secondary"> {{ user.location}} </span>
-					</p>
-					{% endif %}
-				</div>
-				{% if user.classes %}
-				<div
-					class="d-flex flex-wrap align-items-center gap-1 text-xs text-secondary fw-medium">
-					<strong>Classes:</strong>
-					{% set classes = user.classes.split(",")[:3] if user.classes
-					else [] %} {% for class in classes %}
-					<span class="border rounded border-secondary px-1"
-						>{{ class }}</span
-					>
-					{% endfor %}
-				</div>
-				{% endif %} {% if user.interests %}
-				<div
-					class="d-flex flex-wrap align-items-center gap-1 text-xs text-secondary fw-medium">
-					<strong>Interests:</strong>
-					{% set interests = user.interests.split(",")[:3] if
-					user.interests else [] %} {% for interest in interests %}
-					<span class="border rounded border-secondary px-1"
-						>{{ interest }}</span
-					>
-					{% endfor %}
-				</div>
-				{% endif %}
-			</div>
-		</div>
-		{% if actions %} {{ render_actions(user, current_user) }} {% endif %}
-	</div>
+  href="{{ url_for('main.user_profile', username=user.username) }}"
+  class="list-group-item list-group-item-action"
+>
+  <div
+    class="d-flex flex-column flex-sm-row gap-2 align-sm-items-center justify-content-between py-2 gap-3"
+  >
+    <div
+      class="d-flex flex-column flex-sm-row align-items-center align-items-sm-start text-center text-sm-start"
+    >
+      <img
+        src="{{ user.image if user.image else url_for('static', filename='placeholder.jpg')}}"
+        alt="{{ user.username }}"
+        class="avatar md"
+      />
+      <div class="d-flex flex-column ms-2 mt-2px text-black gap-2">
+        <div class="d-flex flex-column">
+          <h4 class="fs-6">{{ user.name }} {{ user.surname }}</h4>
+          {% if user.working_on %}
+          <p class="small">
+            <span class="text-secondary user-working-preview">
+              {{ user.working_on}}
+            </span>
+          </p>
+          {% endif %} {% if user.location %}
+          <p class="small">
+            <i class="fas fa-map-marker-alt mr-2"></i>
+            <span class="text-secondary"> {{ user.location}} </span>
+          </p>
+          {% endif %}
+        </div>
+        {% if user.classes %}
+        <div
+          class="d-flex flex-wrap align-items-center gap-1 text-xs text-secondary fw-medium"
+        >
+          <strong>Classes:</strong>
+          {% set classes = user.classes.split(",")[:3] if user.classes else []
+          %} {% for class in classes %}
+          <span class="border rounded border-secondary px-1">{{ class }}</span>
+          {% endfor %}
+        </div>
+        {% endif %} {% if user.interests %}
+        <div
+          class="d-flex flex-wrap align-items-center gap-1 text-xs text-secondary fw-medium"
+        >
+          <strong>Interests:</strong>
+          {% set interests = user.interests.split(",")[:3] if user.interests
+          else [] %} {% for interest in interests %}
+          <span class="border rounded border-secondary px-1"
+            >{{ interest }}</span
+          >
+          {% endfor %}
+        </div>
+        {% endif %}
+      </div>
+    </div>
+    <div class="d-flex gap-2">
+      {% if actions %} {{ render_actions(user, current_user) }} {% endif %} {%
+      if group %} {{ render_actions(user, current_user, group) }} {% endif %}
+    </div>
+  </div>
 </a>
 
 <!-- Delete friend modal -->
 {% if user in current_user.friends %} {{ render_delete_modal(user) }} {% endif
-%} {% endmacro %}
+%}
+
+<!-- Remove user from group modal -->
+{% if group and group.is_member(user) and group.can_remove_user(current_user,
+user) %} {{ render_remove_user_modal(user, group) }} {% endif %}
+
+<!-- End macro -->
+{% endmacro %}

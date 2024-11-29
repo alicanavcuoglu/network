@@ -1,0 +1,160 @@
+<!-- Cover actions -->
+{% macro render_cover_actions(current_user, group) %}
+<div
+  class="d-flex flex-wrap flex-sm-column flex-md-row align-items-center justify-content-center justify-content-sm-start gap-2"
+>
+  <!-- If member -->
+  {% if group.is_member(current_user) %}
+  <!-- Invite -->
+  <a
+    href="{{ url_for('group.invite', id=group.id) }}"
+    class="btn btn-success btn-no-shrink"
+  >
+    <i class="fa-solid fa-plus me-1 small"></i>
+    <span class="small">Invite</span>
+  </a>
+
+  <!-- If owner -->
+  {% if current_user.id == group.owner_id %}
+  <a
+    href="{{ url_for('group.settings', id=group.id) }}"
+    class="btn btn-primary btn-no-shrink"
+  >
+    <i class="fa-solid fa-gear me-1 small"></i>
+    <span class="small">Group settings</span>
+  </a>
+  {% else %}
+
+  <!-- Leave -->
+  <button
+    class="btn btn-outline-danger btn-no-shrink"
+    data-bs-toggle="modal"
+    data-bs-target="#leaveGroup"
+  >
+    <i class="fa-solid fa-arrow-right-from-bracket me-1 small"></i>
+    <span class="small">Leave</span>
+  </button>
+  {% endif %}
+
+  <!-- If not member -->
+  {% else %} {% if group.has_pending_invitation(current_user) %}
+
+  <!-- Accept -->
+  <button
+    class="btn btn-primary btn-no-shrink"
+    onclick="acceptInvite('{{ group.id }}')"
+  >
+    <i class="fa-solid fa-check me-1 small"></i>
+    <span class="small">Accept</span>
+  </button>
+
+  <!-- Decline -->
+  <button
+    class="btn btn-outline-danger decline-btn btn-no-shrink"
+    onclick="declineInvite('{{ group.id }}')"
+  >
+    <i class="fa-solid fa-x me-1 small"></i>
+    <span class="small">Decline</span>
+  </button>
+
+  <!-- If user neither in the group nor invited -->
+  {% else %}
+
+  <!-- If public join button -->
+  {% if group.group_type.value == "public" %}
+  <button
+    class="btn btn-outline-primary btn-no-shrink"
+    onclick="joinGroup('{{ group.id }}')"
+  >
+    <i class="fa-solid fa-arrow-right-to-bracket me-1 small"></i>
+    <span class="small">Join group</span>
+  </button>
+
+  {% endif %} {% endif %}
+  <!-- Close if else statement -->
+  {% endif %}
+</div>
+
+<script>
+  // Accept invitation
+  function acceptInvite(groupId) {
+    fetch(`/groups/${groupId}/invite/accept`, { method: 'POST' })
+      .then((response) => {
+        if (response.ok) {
+          location.reload();
+        }
+      })
+      .catch((error) => {
+        console.error('Error:', error);
+      });
+  }
+
+  // Decline invitation
+  function declineInvite(groupId) {
+    fetch(`/groups/${groupId}/invite/decline`, { method: 'POST' })
+      .then((response) => {
+        if (response.ok) {
+          location.reload();
+        }
+      })
+      .catch((error) => {
+        console.error('Error:', error);
+      });
+  }
+
+  // Join group
+  function joinGroup(groupId) {
+    fetch(`/groups/${groupId}/join`, { method: 'POST' })
+      .then((response) => {
+        if (response.ok) {
+          location.reload();
+        }
+      })
+      .catch((error) => {
+        console.error('Error:', error);
+      });
+  }
+</script>
+{% endmacro %}
+
+<!-- Leave group modal -->
+{% macro render_leave_modal(current_user, group) %}
+<div
+  class="modal fade"
+  tabindex="-1"
+  id="leaveGroup"
+  aria-labelledby="leaveGroupLabel"
+  aria-hidden="true"
+>
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="container">
+        <form action="{{ url_for('group.leave', id=group.id) }}" method="post">
+          <div class="modal-header">
+            <h5 class="modal-title" id="leaveGroupLabel">Leave Group?</h5>
+            <button
+              type="button"
+              class="btn-close"
+              data-bs-dismiss="modal"
+              aria-label="Close"
+            ></button>
+          </div>
+          <div class="modal-body">
+            Are you sure you want to leave this group?
+          </div>
+          <div class="modal-footer">
+            <button
+              type="button"
+              class="btn btn-secondary"
+              data-bs-dismiss="modal"
+            >
+              Cancel
+            </button>
+            <button type="submit" class="btn btn-danger">Leave</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+{% endmacro %}

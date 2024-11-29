@@ -1,0 +1,80 @@
+{% extends "layout.html" %} {% from "components/group_card.html" import
+render_group_card %} {% block title %} Groups {% endblock %} {% block main %}
+<!-- SEARCH -->
+<div
+	class="mb-3 d-flex flex-column-reverse flex-sm-row align-items-md-center align-items-stretch gap-2">
+	<form
+		action="{{ url_for('group.index') }}"
+		method="get"
+		class="flex-grow-1">
+		<div class="input-group">
+			<button class="btn btn-outline-secondary" type="submit">
+				<i class="fa-solid fa-magnifying-glass"></i>
+			</button>
+
+			<input
+				type="text"
+				name="q"
+				value="{{ search_query if search_query }}"
+				class="form-control"
+				placeholder="Search for groups..." />
+		</div>
+	</form>
+	<a href="{{ url_for('group.create') }}" class="btn btn-primary">
+		<i class="fas fa-plus me-1 small"></i>
+		<span>Create Group</span>
+	</a>
+</div>
+
+<!-- GROUPS -->
+{% if groups %}
+<div class="group-grid">
+	{% for group in groups %} {{ render_group_card(group) }} {% endfor %}
+</div>
+{% else %}
+<div class="profile-div-wrapper">
+	<h3>No groups found</h3>
+	<p class="mb-2 text-secondary">
+		We couldn't find any groups matching your search criteria.
+	</p>
+</div>
+{% endif %}
+
+
+<!-- Pagination -->
+<nav aria-label="Groups navigation" class="mt-auto pt-3">
+	<ul class="pagination d-flex justify-content-center">
+		<li
+			class="page-item {% if not pagination.has_prev %}disabled{% endif %}">
+			<a
+				class="page-link"
+				href="{{ url_for('group.index', page=page-1, q=search_query)}}"
+				aria-label="Previous">
+				<span aria-hidden="true">&laquo;</span>
+			</a>
+		</li>
+		{% for page in pagination.iter_pages() %} {% if page %}
+		<li class="page-item {% if page == pagination.page %}active{% endif %}">
+			<a
+				class="page-link"
+				href="{{ url_for('group.index', page=page, q=search_query) }}">
+				{{ page }}
+			</a>
+		</li>
+		{% else %}
+		<li class="page-item disabled">
+			<span class="page-link">...</span>
+		</li>
+		{% endif %} {% endfor %}
+		<li
+			class="page-item {% if not pagination.has_next %}disabled{% endif %}">
+			<a
+				class="page-link"
+				href="{{ url_for('group.index', page=page+1, q=search_query) }}"
+				aria-label="Next">
+				<span aria-hidden="true">&raquo;</span>
+			</a>
+		</li>
+	</ul>
+</nav>
+{% endblock %}

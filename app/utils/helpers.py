@@ -11,6 +11,13 @@ from werkzeug.utils import secure_filename
 
 from app.models import User
 
+from typing import Final, Literal
+
+# AWS S3 Folders
+USER_IMAGE_FOLDER: Final[str] = "user-images"
+GROUP_IMAGE_FOLDER: Final[str] = "group-images"
+# POST_IMAGE_FOLDER: Final[str] = "post-images"
+
 
 # Login required
 def login_required(f):
@@ -75,7 +82,6 @@ def validate_image(stream):
     return "." + (format if format != "jpeg" else "jpg")
 
 
-
 def create_notification_message(notification):
     sender_name = f"{notification.sender.name} {notification.sender.surname}"
 
@@ -92,6 +98,7 @@ def create_notification_message(notification):
             return f"{sender_name} shared your post"
         case "comment_like":
             return f"{sender_name} liked your comment"
+        # TODO: Add new notification message
         case _:
             return f"New notification from {sender_name}"
 
@@ -110,6 +117,7 @@ def create_notification_link(notification):
             return f"/posts/{notification.post_id}"
         case "comment_like":
             return f"/posts/{notification.post_id}#comment-{notification.comment_id}"
+        # TODO: Add new notification link
         case _:
             return "#"
 
@@ -193,7 +201,9 @@ s3 = boto3.client(
 
 
 # Upload image to AWS S3
-def upload_file_to_s3(file, acl="public-read"):
+def upload_file_to_s3(
+    file, folder: Literal["user-image", "group-image"] = "user-image"
+):
     try:
         filename = secure_filename(file.filename)
 
@@ -205,7 +215,7 @@ def upload_file_to_s3(file, acl="public-read"):
             return None
 
         timestamp = datetime.now().strftime("%Y%m%d-%H%M%S")
-        unique_filename = f"{timestamp}-{filename}"
+        unique_filename = f"{folder}/{timestamp}-{filename}"
 
         s3.upload_fileobj(
             file,
@@ -223,33 +233,33 @@ def upload_file_to_s3(file, acl="public-read"):
         return str(e)
 
 
-def delete_file_from_s3(user_image):
-    user = User.query.filter(
-        User.id == session["user_id"], User.image == user_image
-    ).first()
-    if not user:
-        return "User or image not found", 404
-
-    # Parse the URL
-    parsed_url = urlparse(user_image)
-    # Get the path after the bucket name
-    path_parts = parsed_url.path.split("/")
-
-    # Remove empty strings and the first element (which is empty due to leading /)
-    path_parts = [part for part in path_parts if part]
-
-    # If the bucket name is in the path (like in virtual-hosted style URLs),
-    # remove it from the path parts
-    bucket_name = os.getenv("AWS_BUCKET_NAME")
-    if path_parts[0] == bucket_name:
-        path_parts.pop(0)
-
-    # Join the remaining parts to form the key
-    key = "/".join(path_parts)
-
+# Delete user image from AWS S3
+def delete_file_from_s3(
+    file
+):
     try:
+        # Parse the URL
+        parsed_url = urlparse(file)
+        # Get the path after the bucket name
+        path_parts = parsed_url.path.split("/")
+
+        # Remove empty strings and the first element (which is empty due to leading /)
+        path_parts = [part for part in path_parts if part]
+
+        # If the bucket name is in the path (like in virtual-hosted style URLs),
+        # remove it from the path parts
+        bucket_name = os.getenv("AWS_BUCKET_NAME")
+        if path_parts[0] == bucket_name:
+            path_parts.pop(0)
+
+        # Join the remaining parts to form the key
+        key = "/".join(path_parts)
+
         s3.delete_object(Bucket=bucket_name, Key=key)
         return True
     except Exception as e:
         print("Error Deleting File: ", e)
         return str(e)
+
+
+# TODO: Create and delete group image files from s3

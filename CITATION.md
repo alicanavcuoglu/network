@@ -34,3 +34,10 @@ https://jinja.palletsprojects.com/en/3.1.x/templates/#macros
 https://blog.miguelgrinberg.com/post/easy-websockets-with-flask-and-gevent
 https://github.com/mahmouddello/flask-chat-app/tree/master
 https://www.youtube.com/watch?v=AMp6hlA8xKA&ab_channel=PrettyPrinted
+
+
+<!-- Group Placeholder Image -->
+https://www.jcu.edu.au/employability-edge/develop-your-professional-identity/professional-networking
+
+<!-- Destructuring in Python -->
+https://blog.teclado.com/destructuring-in-python/

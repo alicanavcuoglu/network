@@ -1,6 +1,7 @@
-{% extends "layout.html" %} {% import 'components/post.html' as postings %} {%
-from 'components/user_cover.html' import cover %} {% block title %} {{ user.name
-}} {{ user.surname }} {% endblock %} {% block main %}
+{% extends "layout.html" %} {% from 'components/group_card.html' import
+render_group_card %} {% from 'components/user_cover.html' import cover %} {%
+block title %} {{ user.name }} {{ user.surname }} {% endblock %} {% block main
+%}
 <!-- UI TEMPLATES from https://bbbootstrap.com/snippets/individual-user-profile-social-network-94176986, https://www.bootdey.com/snippets/view/bs4-profile-with-timeline-posts -->
 <div>
 	<div>
@@ -35,9 +36,46 @@ from 'components/user_cover.html' import cover %} {% block title %} {{ user.name
 	<!-- Tab -->
 	<div class="py-4">
 		{% if can_view %} {% if groups|length > 0 %}
-		<ul class="list-group">
-			{% for friend in groups %} Group Card {% endfor %}
+		<ul class="group-grid">
+			{% for group in groups %} {{render_group_card(group)}} {% endfor %}
 		</ul>
+		<!-- Pagination -->
+		<nav aria-label="User's groups" class="mt-auto pt-3">
+			<ul class="pagination d-flex justify-content-center">
+				<li
+					class="page-item {% if not pagination.has_prev %}disabled{% endif %}">
+					<a
+						class="page-link"
+						href="{{ url_for('main.user_profile_groups', username=user.username, page=page-1)}}"
+						aria-label="Previous">
+						<span aria-hidden="true">&laquo;</span>
+					</a>
+				</li>
+				{% for page in pagination.iter_pages() %} {% if page %}
+				<li
+					class="page-item {% if page == pagination.page %}active{% endif %}">
+					<a
+						class="page-link"
+						href="{{ url_for('main.user_profile_groups', username=user.username, page=page) }}">
+						{{ page }}
+					</a>
+				</li>
+				{% else %}
+				<li class="page-item disabled">
+					<span class="page-link">...</span>
+				</li>
+				{% endif %} {% endfor %}
+				<li
+					class="page-item {% if not pagination.has_next %}disabled{% endif %}">
+					<a
+						class="page-link"
+						href="{{ url_for('main.user_profile_groups', username=user.username, page=page+1) }}"
+						aria-label="Next">
+						<span aria-hidden="true">&raquo;</span>
+					</a>
+				</li>
+			</ul>
+		</nav>
 		{% else %}
 		<div class="profile-div-wrapper">
 			<div class="icon-box border">

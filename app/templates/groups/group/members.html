@@ -1,0 +1,53 @@
+{% extends "components/group_cover.html" %} {% import "components/post.html" as
+postings %} {% from "components/user_card.html" import card %}
+
+<!-- Title -->
+{% block title %}Members of {{ group.name }}{% endblock %}
+
+<!-- Block starts here -->
+{% block content %}
+
+<!-- Content -->
+<!-- Owner -->
+<div class="mb-4 d-flex flex-column gap-2">
+	<h2 class="fs-4">Group Owner</h2>
+	<div class="list-group">
+		{{ card(group.owner, current_user, actions=False) }}
+	</div>
+</div>
+
+<!-- Admins -->
+{% if group.admins.count() > 0 %}
+<div class="mb-4 d-flex flex-column gap-2">
+	<h2 class="fs-4">Admins</h2>
+	<div class="list-group">
+		{% for admin in group.get_admins() %} {{ card(admin, current_user,
+		actions=False, group=group) }} {% endfor %}
+	</div>
+	{% if group.admins.count() > 3 %}
+	<a
+		href="{{ url_for('group.all_admins', id=group.id) }}"
+		class="btn btn-primary"
+		>All admins</a
+	>
+	{% endif %}
+</div>
+{% endif %}
+
+<!-- Members -->
+{% if group.members.count() > 0 %}
+<div class="mb-4 d-flex flex-column gap-2">
+	<h2 class="fs-4">Members</h2>
+	<div class="list-group">
+		{% for member in group.get_members() %} {{ card(member, current_user,
+		actions=False, group=group) }} {% endfor %}
+	</div>
+	{% if group.members.count() > 3 %}
+	<a
+		href="{{ url_for('group.all_members', id=group.id) }}"
+		class="btn btn-primary"
+		>All members</a
+	>
+	{% endif %}
+</div>
+{% endif %} {% endblock %}

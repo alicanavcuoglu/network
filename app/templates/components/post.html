@@ -1,47 +1,92 @@
 <!-- https://stackoverflow.com/questions/55841442/can-you-create-components-in-flask-jinja-to-insert-in-various-templates -->
-{% macro create_post(current_user) -%}
+<!-- Create post -->
+{% macro create_post(current_user, group=None) -%}
 <div class="card">
 	<div class="card-body">
 		<a
-			href="/profiles/{{ current_user.username }}"
+			href="{{ url_for('main.user_profile', username=current_user.username) }}"
 			class="d-flex align-items-center gap-2 mb-3 text-decoration-none text-secondary-emphasis">
 			<img
 				src="{{ current_user.image if current_user.image else url_for('static', filename='placeholder.jpg') }}"
 				alt="avatar"
 				class="avatar sm" />
-			<h2 class="fs-4">
-				{{ current_user.name }} {{ current_user.surname }}
-			</h2>
+			<h4 class="fs-6">
+				{{ current_user.name }} {{ current_user.surname }} {% if group
+				%}
+				<span class="text-secondary fs-6">
+					• posting in {{ group.name }}</span
+				>
+				{% endif %}
+			</h4>
 		</a>
-		<form action="/post" method="post">
+		<form
+			action="{{ url_for('group.page', id=group.id) if group else url_for('main.create_post') }}"
+			method="post">
 			<textarea
 				class="form-control mb-3"
 				id="content"
 				name="content"
 				rows="4"
-				placeholder="Write your post..."
+				placeholder="Write your post{% if group %} in {{ group.name }}{% endif %}..."
 				required></textarea>
 			<button type="submit" class="btn btn-primary float-end">
-				Post
+				Post{% if group %} in group{% endif %}
 			</button>
 		</form>
 	</div>
 </div>
-{%- endmacro %} {% macro post(post, current_user) %}
+{%- endmacro %}
+
+<!-- Post component -->
+{% macro post(post, current_user, group=None) %}
 <div class="post bg-white" data-post-id="{{ post.id | string }}">
 	<div class="d-flex align-items-start justify-content-between">
-		<div class="d-flex align-items-center mb-3">
+		<div class="d-flex align-items-center gap-2 mb-3">
+			{% if group %}
+			<a href="{{ url_for('group.page', id=group.id) }}">
+				<img
+					src="{{ group.image if group.image else url_for('static', filename='group_placeholder.jpg') }}"
+					alt="{{ group.name }}"
+					class="avatar sm margin-t-2" />
+			</a>
+			<div>
+				<a
+					href="{{ url_for('group.page', id=group.id) }}"
+					class="text-decoration-none text-black">
+					<h4 class="fs-6 lh-1">{{ group.name }}</h4>
+				</a>
+
+				<div class="d-flex gap-1 align-items-center text-muted">
+					<a
+						href="/profiles/{{ post.user.username }}"
+						class="text-decoration-none textdec text-secondary-emphasis fw-medium">
+						<h5 class="small fw-medium text-muted">
+							{{ post.user.name }} {{ post.user.surname }}
+						</h5>
+					</a>
+					<span class="fw-light">•</span>
+					<span
+						class="text-xs fw-light"
+						data-bs-toggle="tooltip"
+						data-bs-placement="bottom"
+						title="{{ post.created_at }}"
+						>{{ post.created_at | time_ago }}</span
+					>
+				</div>
+			</div>
+
+			{% else %}
 			<a href="/profiles/{{ post.user.username }}">
 				<img
 					src="{{ post.user.image if post.user.image else url_for('static', filename='placeholder.jpg') }}"
 					alt="{{ post.user.username }}"
 					class="avatar sm margin-t-2" />
 			</a>
-			<div class="d-flex flex-column ms-2">
+			<div class="d-flex flex-column">
 				<a
 					href="/profiles/{{ post.user.username }}"
 					class="text-decoration-none text-secondary-emphasis fw-medium">
-					<h4 class=" fs-6">
+					<h4 class="fs-6">
 						{{ post.user.name }} {{ post.user.surname }}
 					</h4>
 				</a>
@@ -53,9 +98,13 @@
 					>{{ post.created_at | time_ago }}</span
 				>
 			</div>
+			{% endif %}
 		</div>
-		<div class="d-flex align-items-center gap-3">
-			<a href="/posts/{{ post.id }}" class="text-secondary-emphasis"
+		<div
+			class="d-flex flex-column-reverse flex-sm-row align-items-center gap-3">
+			<a
+				href="{{ url_for('group.post', id=post.group_id, post_id=post.id) if post.group_id else url_for('main.post_page', id=post.id)}}"
+				class="text-secondary-emphasis"
 				>Go to post</a
 			>
 			{% if post.user_id == current_user.id %}
@@ -86,7 +135,7 @@
 						<a
 							href="/profiles/{{ post.original_post.user.username }}"
 							class="text-decoration-none text-secondary-emphasis fw-medium">
-							<h4 class=" fs-6">
+							<h4 class="fs-6">
 								{{ post.original_post.user.name }} {{
 								post.original_post.user.surname }}
 							</h4>
@@ -286,7 +335,7 @@
 	id="deletePostModal-{{ post.id }}"
 	aria-labelledby="deletePostLabel-{{ post.id }}"
 	aria-hidden="true">
-	<div class="modal-dialog modal-dialog-bottom">
+	<div class="modal-dialog modal-dialog-centered">
 		<div class="modal-content">
 			<div class="container">
 				<div class="modal-header">
