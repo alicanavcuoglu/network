@@ -91,7 +91,13 @@ def create_notification_message(notification):
             return f"{sender_name} shared your post"
         case "comment_like":
             return f"{sender_name} liked your comment"
-        # TODO: Add new notification message
+        # Group notifications
+        case "group_invite":
+            return f"{sender_name} invited you to {notification.group.name}"
+        case "invite_accepted":
+            return f"{sender_name} accepted your invitation to {notification.group.name}"
+        case "admin_promotion":
+            return f"{sender_name} promoted you as an admin in {notification.group.name}"
         case _:
             return f"New notification from {sender_name}"
 
@@ -110,7 +116,13 @@ def create_notification_link(notification):
             return f"/posts/{notification.post_id}"
         case "comment_like":
             return f"/posts/{notification.post_id}#comment-{notification.comment_id}"
-        # TODO: Add new notification link
+        # Group notifications
+        case "group_invite":
+            return f"/groups/{notification.group_id}"
+        case "invite_accepted":
+            return f"/groups/{notification.group_id}/members/all"
+        case "admin_promotion":
+            return f"/groups/{notification.group_id}/members/admins"
         case _:
             return "#"
 

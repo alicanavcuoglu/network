@@ -156,7 +156,9 @@ class Post(db.Model):
     id: Mapped[int] = mapped_column(primary_key=True)
     user_id: Mapped[int] = mapped_column(ForeignKey("user.id"), nullable=False)
     # Reshare
-    parent_id: Mapped[int] = mapped_column(ForeignKey("post.id", ondelete="SET NULL"), nullable=True)
+    parent_id: Mapped[int] = mapped_column(
+        ForeignKey("post.id", ondelete="SET NULL"), nullable=True
+    )
     # Group post
     group_id: Mapped[int] = mapped_column(ForeignKey("group.id"), nullable=True)
 
@@ -312,10 +314,9 @@ class NotificationEnum(enum.Enum):
     POST_COMMENT = "post_comment"
     POST_SHARE = "post_share"
     COMMENT_LIKE = "comment_like"
-    # Group notifications
-    GROUP_INVITE="group_invite"
-    INVITE_ACCEPTED="invite_accepted"
-    ADMIN_PROMOTION="admin_promotion"
+    GROUP_INVITE = "group_invite"
+    INVITE_ACCEPTED = "invite_accepted"
+    ADMIN_PROMOTION = "admin_promotion"
 
 
 class Notification(db.Model):
@@ -328,8 +329,15 @@ class Notification(db.Model):
         nullable=False,
     )
 
-    post_id: Mapped[int] = mapped_column(ForeignKey("post.id", ondelete="CASCADE"), nullable=True)
-    comment_id: Mapped[int] = mapped_column(ForeignKey("comment.id", ondelete="CASCADE"), nullable=True)
+    post_id: Mapped[int] = mapped_column(
+        ForeignKey("post.id", ondelete="CASCADE"), nullable=True
+    )
+    comment_id: Mapped[int] = mapped_column(
+        ForeignKey("comment.id", ondelete="CASCADE"), nullable=True
+    )
+    group_id: Mapped[int] = mapped_column(
+        ForeignKey("group.id", ondelete="CASCADE"), nullable=True
+    )
 
     is_read: Mapped[bool] = mapped_column(Boolean, default=False)
     created_at: Mapped[datetime] = mapped_column(
@@ -341,8 +349,9 @@ class Notification(db.Model):
         foreign_keys=[recipient_id], backref="received_notifications"
     )
     sender: Mapped["User"] = relationship(foreign_keys=[sender_id])
-    post: Mapped["Post"] = relationship()
-    comment: Mapped["Comment"] = relationship()
+    post: Mapped[Optional["Post"]] = relationship()
+    comment: Mapped[Optional["Comment"]] = relationship()
+    group: Mapped[Optional["Group"]] = relationship()
 
     def __repr__(self):
         return f"<Notification {self.id} from {self.sender_id} to {self.recipient_id}>"
@@ -360,6 +369,8 @@ class Notification(db.Model):
             "is_read": self.is_read,
             "post_id": self.post_id,
             "comment_id": self.comment_id,
+            "group_id": self.group_id,
+            "group_name": self.group.name,
         }
 
 
@@ -441,7 +452,7 @@ class Group(db.Model):
                 and target_user not in self.admins
                 and target_user in self.members
             )
-            
+
         return False
 
     # Remove a user from the group

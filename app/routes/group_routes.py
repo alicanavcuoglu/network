@@ -10,8 +10,9 @@ from flask import (
 )
 
 from app.extensions import db
-from app.models import Group, Invitation, Post, User
+from app.models import Group, Invitation, NotificationEnum, Post, User
 from app.routes import group_bp
+from app.services.notifications import create_notification, emit_notification
 from app.services.queries import (
     get_group_admins,
     get_group_members,
@@ -38,14 +39,16 @@ def index():
         pagination=pagination,
     )
 
-    
+
 @group_bp.route("/my-groups")
 def my_groups():
     page = request.args.get("page", 1, type=int)
     search_query = request.args.get("q")
 
     # Get groups
-    pagination = get_groups(page=page, search_query=search_query, user_id=session["user_id"])
+    pagination = get_groups(
+        page=page, search_query=search_query, user_id=session["user_id"]
+    )
 
     return render_template(
         "groups/index.html",
@@ -137,11 +140,9 @@ def invite(id):
 
         if user in group.members or user in group.admins or user == group.owner:
             return jsonify({"error": "User already in group"}), 400
-        
+
         existing_invitation = Invitation.query.filter_by(
-            group_id=group.id,
-            invitee_id=user.id,
-            inviter_id=session["user_id"]
+            group_id=group.id, invitee_id=user.id, inviter_id=session["user_id"]
         ).first()
 
         if existing_invitation:
@@ -153,9 +154,18 @@ def invite(id):
 
         db.session.add(invitation)
 
-        # TODO: Add notification
+        notification = create_notification(
+            recipient_id=user.id,
+            sender_id=session["user_id"],
+            group_id=group.id,
+            notification_type=NotificationEnum.GROUP_INVITE,
+        )
+
         db.session.commit()
-        
+
+        # Emit notification with SocketIO
+        emit_notification(notification)
+
         return "success", 200
 
     page = request.args.get("page", 1, type=int)
@@ -334,10 +344,19 @@ def accept_invite(id):
 
     group.members.append(user)
     db.session.delete(invitation)
-    
-    # TODO: Send notification to inviter
+
+    # Send notification to inviter
+    notification = create_notification(
+        recipient_id=group.owner_id,
+        sender_id=user.id,
+        group_id=group.id,
+        notification_type=NotificationEnum.INVITE_ACCEPTED,
+    )
 
     db.session.commit()
+
+    # Emit notification with SocketIO
+    emit_notification(notification)
 
     flash(f"You have joined {group.name}!", "success")
     return "success", 200
@@ -414,35 +433,48 @@ def make_admin(id, user_id):
         flash("User is already an admin", "error")
         return "bad request", 400
 
-   # Move from member to admin
+    # Move from member to admin
     group.members.remove(target_user)
     group.admins.append(target_user)
+
+    # Send notification to new admin
+    notification = create_notification(
+            recipient_id=target_user.id,
+            sender_id=current_user.id,
+            group_id=group.id,
+            notification_type=NotificationEnum.ADMIN_PROMOTION,
+        )
+
     db.session.commit()
 
-    # TODO: Send notification to new admin
-    # You're now admin in {group.name}!
+    # Emit notification with SocketIO
+    emit_notification(notification)
 
     flash(f"{target_user.name} {target_user.surname} is now an admin", "success")
     return "success", 200
 
+
 @group_bp.route("/groups/<id>/revoke-admin/<user_id>", methods=["POST"])
 def revoke_admin(id, user_id):
-   current_user = db.get_or_404(User, session["user_id"])
-   target_user = db.get_or_404(User, user_id)
-   group = db.get_or_404(Group, id)
+    current_user = db.get_or_404(User, session["user_id"])
+    target_user = db.get_or_404(User, user_id)
+    group = db.get_or_404(Group, id)
 
-   if current_user.id != group.owner_id:
-       flash("Only the owner can revoke admin privileges", "error")
-       return "unauthorized", 401
+    if current_user.id != group.owner_id:
+        flash("Only the owner can revoke admin privileges", "error")
+        return "unauthorized", 401
 
-   if target_user not in group.admins:
-       flash("User is not an admin", "error")
-       return "bad request", 400
+    if target_user not in group.admins:
+        flash("User is not an admin", "error")
+        return "bad request", 400
 
-   # Move from admin to member
-   group.admins.remove(target_user)
-   group.members.append(target_user)
-   db.session.commit()
+    # Move from admin to member
+    group.admins.remove(target_user)
+    group.members.append(target_user)
+    db.session.commit()
 
-   flash(f"Revoked admin privileges from {target_user.name} {target_user.surname}", "success")
-   return "success", 200
+    flash(
+        f"Revoked admin privileges from {target_user.name} {target_user.surname}",
+        "success",
+    )
+    return "success", 200

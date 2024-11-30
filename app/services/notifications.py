@@ -1,11 +1,17 @@
 from sqlalchemy import select
+
 from app.events import connected_users
 from app.models import Notification, db
 from app.services import socketio
 
 
 def create_notification(
-    recipient_id, sender_id, notification_type, post_id=None, comment_id=None
+    recipient_id,
+    sender_id,
+    notification_type,
+    post_id=None,
+    comment_id=None,
+    group_id=None,
 ):
     notification = Notification(
         recipient_id=recipient_id,
@@ -13,6 +19,7 @@ def create_notification(
         notification_type=notification_type,
         post_id=post_id,
         comment_id=comment_id,
+        group_id=group_id,
     )
 
     db.session.add(notification)
