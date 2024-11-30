@@ -5,7 +5,6 @@ from app.extensions import db, mail, migrate, socketio
 
 
 def create_app():
-
     app = Flask(__name__)
     app.config.from_object(Config)
 
@@ -16,7 +15,7 @@ def create_app():
 
     with app.app_context():
         # Import and register blueprints
-        from app.routes import auth_bp, errors_bp, filters_bp, main_bp, group_bp
+        from app.routes import auth_bp, errors_bp, filters_bp, group_bp, main_bp
 
         app.register_blueprint(errors_bp)
         app.register_blueprint(filters_bp)

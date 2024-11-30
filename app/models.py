@@ -156,7 +156,7 @@ class Post(db.Model):
     id: Mapped[int] = mapped_column(primary_key=True)
     user_id: Mapped[int] = mapped_column(ForeignKey("user.id"), nullable=False)
     # Reshare
-    parent_id: Mapped[int] = mapped_column(ForeignKey("post.id"), nullable=True)
+    parent_id: Mapped[int] = mapped_column(ForeignKey("post.id", ondelete="SET NULL"), nullable=True)
     # Group post
     group_id: Mapped[int] = mapped_column(ForeignKey("group.id"), nullable=True)
 
@@ -312,7 +312,10 @@ class NotificationEnum(enum.Enum):
     POST_COMMENT = "post_comment"
     POST_SHARE = "post_share"
     COMMENT_LIKE = "comment_like"
-    # TODO: Add new notification enum
+    # Group notifications
+    GROUP_INVITE="group_invite"
+    INVITE_ACCEPTED="invite_accepted"
+    ADMIN_PROMOTION="admin_promotion"
 
 
 class Notification(db.Model):
@@ -326,7 +329,7 @@ class Notification(db.Model):
     )
 
     post_id: Mapped[int] = mapped_column(ForeignKey("post.id", ondelete="CASCADE"), nullable=True)
-    comment_id: Mapped[int] = mapped_column(ForeignKey("comment.id"), nullable=True)
+    comment_id: Mapped[int] = mapped_column(ForeignKey("comment.id", ondelete="CASCADE"), nullable=True)
 
     is_read: Mapped[bool] = mapped_column(Boolean, default=False)
     created_at: Mapped[datetime] = mapped_column(

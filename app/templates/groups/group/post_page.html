@@ -6,5 +6,5 @@
 
 <!-- Block starts here -->
 {% block content %}
-{{ postings.post(post, current_user) }}
+{{ postings.post(post, current_user, group=group) }}
 {% endblock %}

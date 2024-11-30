@@ -3,118 +3,126 @@
 
 <!-- TABS -->
 <div
-	class="list-group d-flex flex-row text-center overflow-x-auto bg-light list-group-flush account-settings-links border-bottom mb-3">
-	<a href="/notifications" class="list-group-item list-group-item-action"
-		>All notifications</a
-	>
-	<a
-		href="/notifications/unread/all"
-		class="list-group-item list-group-item-action active"
-		>Unread Notifications</a
-	>
+  class="list-group d-flex flex-row text-center overflow-x-auto bg-light list-group-flush account-settings-links border-bottom mb-3"
+>
+  <a href="/notifications" class="list-group-item list-group-item-action"
+    >All notifications</a
+  >
+  <a
+    href="/notifications/unread/all"
+    class="list-group-item list-group-item-action active"
+    >Unread Notifications</a
+  >
 </div>
 
 {% if notifications %}
 
 <div class="d-flex justify-content-end mb-3">
-	<button
-		class="btn btn-outline-secondary"
-		onclick="markAllRead()"
-		{%
-		if
-		not
-		g.unread_notifications
-		%}disabled{%
-		endif
-		%}>
-		Mark all as read
-	</button>
+  <button
+    class="btn btn-outline-secondary"
+    onclick="markAllRead()"
+    {%
+    if
+    not
+    g.unread_notifications
+    %}disabled{%
+    endif
+    %}
+  >
+    Mark all as read
+  </button>
 </div>
 
 <ul class="list-group">
-	{% for notification in notifications %}
-	<li
-		id="{{notification.id}}"
-		data-notification="{{notification.id}}"
-		class="list-unstyled">
-		<a
-			class="list-group-item notification-item {{ 'unread' if not notification.is_read else '' }} p-3 border text-decoration-none"
-			href="{{ notification | notification_link }}"
-			onclick="markAsRead('{{notification.id}}', false)">
-			<img
-				src="{{ notification.sender.image if notification.sender.image else url_for('static', filename='placeholder.jpg') }}"
-				alt="{{ notification.sender.name }}"
-				class="avatar xs" />
-			<div>
-				<span class="notification-text">
-					{{ notification | notification_message }}
-				</span>
-				<span
-					class="text-muted text-xs fw-light lh-1"
-					data-bs-toggle="tooltip"
-					data-bs-placement="bottom"
-					title="{{notification.created_at}}"
-					>{{ notification.created_at | time_ago }}</span
-				>
-				<button
-					class="border-0 p-0 position-absolute top-50 end-0 translate-middle-y me-3 text-black bg-transparent"
-					data-bs-toggle="tooltip"
-					data-bs-placement="bottom"
-					title="Mark as read"
-					onclick="markAsRead('{{notification.id}}')">
-					<i
-						class="fa-regular fa-circle"
-						onmouseenter="this.className='fa-solid fa-circle'"
-						onmouseleave="this.className='fa-regular fa-circle'"></i>
-				</button>
-			</div>
-		</a>
-	</li>
-	{% endfor %}
+  {% for notification in notifications %}
+  <li
+    id="{{notification.id}}"
+    data-notification="{{notification.id}}"
+    class="list-unstyled"
+  >
+    <a
+      class="list-group-item notification-item {{ 'unread' if not notification.is_read else '' }} p-3 border text-decoration-none"
+      href="{{ notification | notification_link }}"
+      onclick="markAsRead('{{notification.id}}', false)"
+    >
+      <img
+        src="{{ notification.sender.image | s3_url('user') }}"
+        alt="{{ notification.sender.name }}"
+        class="avatar xs"
+      />
+      <div>
+        <span class="notification-text">
+          {{ notification | notification_message }}
+        </span>
+        <span
+          class="text-muted text-xs fw-light lh-1"
+          data-bs-toggle="tooltip"
+          data-bs-placement="bottom"
+          title="{{notification.created_at}}"
+          >{{ notification.created_at | time_ago }}</span
+        >
+        <button
+          class="border-0 p-0 position-absolute top-50 end-0 translate-middle-y me-3 text-black bg-transparent"
+          data-bs-toggle="tooltip"
+          data-bs-placement="bottom"
+          title="Mark as read"
+          onclick="markAsRead('{{notification.id}}')"
+        >
+          <i
+            class="fa-regular fa-circle"
+            onmouseenter="this.className='fa-solid fa-circle'"
+            onmouseleave="this.className='fa-regular fa-circle'"
+          ></i>
+        </button>
+      </div>
+    </a>
+  </li>
+  {% endfor %}
 </ul>
 {% else %}
 <div class="profile-div-wrapper">
-	<h3>No notifications yet</h3>
-	<p class="mb-2 text-secondary">
-		Looks like you're all caught up! Check back later for new updates.
-	</p>
+  <h3>No notifications yet</h3>
+  <p class="mb-2 text-secondary">
+    Looks like you're all caught up! Check back later for new updates.
+  </p>
 </div>
 {% endif %}
 
 <!-- Pagination -->
 <nav aria-label="Notifications navigation" class="mt-auto pt-3">
-	<ul class="pagination d-flex justify-content-center">
-		<li
-			class="page-item {% if not pagination.has_prev %}disabled{% endif %}">
-			<a
-				class="page-link"
-				href="{{ url_for('main.all_unread_notifications', page=page-1)}}"
-				aria-label="Previous">
-				<span aria-hidden="true">&laquo;</span>
-			</a>
-		</li>
-		{% for page in pagination.iter_pages() %} {% if page %}
-		<li class="page-item {% if page == pagination.page %}active{% endif %}">
-			<a
-				class="page-link"
-				href="{{ url_for('main.all_unread_notifications', page=page) }}">
-				{{ page }}
-			</a>
-		</li>
-		{% else %}
-		<li class="page-item disabled">
-			<span class="page-link">...</span>
-		</li>
-		{% endif %} {% endfor %}
-		<li
-			class="page-item {% if not pagination.has_next %}disabled{% endif %}">
-			<a
-				class="page-link"
-				href="{{ url_for('main.all_unread_notifications', page=page+1) }}"
-				aria-label="Next">
-				<span aria-hidden="true">&raquo;</span>
-			</a>
-		</li>
-	</ul>
+  <ul class="pagination d-flex justify-content-center">
+    <li class="page-item {% if not pagination.has_prev %}disabled{% endif %}">
+      <a
+        class="page-link"
+        href="{{ url_for('main.all_unread_notifications', page=page-1)}}"
+        aria-label="Previous"
+      >
+        <span aria-hidden="true">&laquo;</span>
+      </a>
+    </li>
+    {% for page in pagination.iter_pages() %} {% if page %}
+    <li class="page-item {% if page == pagination.page %}active{% endif %}">
+      <a
+        class="page-link"
+        href="{{ url_for('main.all_unread_notifications', page=page) }}"
+      >
+        {{ page }}
+      </a>
+    </li>
+    {% else %}
+    <li class="page-item disabled">
+      <span class="page-link">...</span>
+    </li>
+    {% endif %} {% endfor %}
+    <li class="page-item {% if not pagination.has_next %}disabled{% endif %}">
+      <a
+        class="page-link"
+        href="{{ url_for('main.all_unread_notifications', page=page+1) }}"
+        aria-label="Next"
+      >
+        <span aria-hidden="true">&raquo;</span>
+      </a>
+    </li>
+  </ul>
 </nav>
 {% endblock %}

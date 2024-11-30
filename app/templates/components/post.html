@@ -39,11 +39,11 @@
 {%- endmacro %}
 
 <!-- Post component -->
-{% macro post(post, current_user, group=None) %}
+{% macro post(post, current_user, group=None, display_group=True) %}
 <div class="post bg-white" data-post-id="{{ post.id | string }}">
   <div class="d-flex align-items-start justify-content-between">
     <div class="d-flex align-items-center gap-2 mb-3">
-      {% if group %}
+      {% if group and display_group %}
       <a href="{{ url_for('group.page', id=group.id) }}">
         <img
           src="{{ group.image|s3_url('group') }}"
@@ -113,6 +113,16 @@
         >Go to post</a
       >
       {% if post.user_id == current_user.id %}
+      <button
+        type="button"
+        class="btn btn-danger btn-sm"
+        data-bs-toggle="modal"
+        data-bs-target="#deletePostModal-{{ post.id }}"
+      >
+        <i class="fas fa-trash"></i> Delete
+      </button>
+      {% endif %} {% if group and group.can_remove_user(current_user, post.user)
+      %}
       <button
         type="button"
         class="btn btn-danger btn-sm"
@@ -227,7 +237,7 @@
       >
         <a href="/profiles/{{ comment.user.username }}">
           <img
-            src="{{ comment.user.image if comment.user.image else url_for('static', filename='placeholder.jpg') }}"
+            src="{{ comment.user.image | s3_url('user') }}"
             alt="{{ comment.user.username }}"
             class="avatar xs margin-t-2"
           />
@@ -257,6 +267,12 @@
             {% else %}
             <button class="my-btn text-muted comment-like-btn">Like</button>
             {% endif %} {% if current_user.id == comment.user_id %}
+            <button class="my-btn text-danger delete-comment-btn">
+              Delete
+            </button>
+            {% endif %}
+            <!-- Admin comment delete -->
+            {% if group and group.can_remove_user(current_user, comment.user) %}
             <button class="my-btn text-danger delete-comment-btn">
               Delete
             </button>

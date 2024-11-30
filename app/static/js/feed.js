@@ -153,6 +153,7 @@ document.querySelectorAll(".delete-btn").forEach((deleteBtn) => {
 			.then((data) => location.reload())
 			.catch((error) => {
 				console.error("Error:", error);
+				location.reload()
 			});
 	});
 });

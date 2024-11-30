@@ -433,14 +433,19 @@ def reshare_post(id):
 # Delete post
 @main_bp.route("/post/delete/<id>", methods=["DELETE"])
 def delete_post(id):
-    post = Post.query.get_or_404(id)
-    print(f"DELETING POST: {post}")
+    current_user = db.get_or_404(User, session["user_id"])
+    post = db.get_or_404(Post, id)
 
     if not post:
         flash("Can't delete the post!", "error")
         return "bad request!", 400
 
-    if post.user_id != session["user_id"]:
+    if post.user_id == current_user.id:
+        can_delete = True
+    elif post.group:
+        can_delete = post.group.can_remove_user(current_user, post.user)
+
+    if not can_delete:
         flash("You don't have permission to delete this post.", "error")
         return unauthorized()
 
@@ -575,13 +580,19 @@ def comment_post(id):
 # Delete comment
 @main_bp.route("/comment/delete/<id>", methods=["DELETE"])
 def delete_comment(id):
-    comment = Comment.query.get_or_404(id)
+    current_user = db.get_or_404(User, session["user_id"])
+    comment = db.get_or_404(Comment, id)
 
     if not comment:
         flash("Can't delete the comment!", "error")
         return "bad request!", 400
 
-    if comment.user_id != session["user_id"]:
+    if comment.user_id == current_user.id:
+        can_delete = True
+    elif comment.post.group:
+        can_delete = comment.post.group.can_remove_user(current_user, comment.user)
+
+    if not can_delete:
         flash("You don't have permission to delete this comment.", "error")
         return unauthorized()
 

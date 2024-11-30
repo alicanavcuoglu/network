@@ -37,7 +37,7 @@ block title %} Homepage {% endblock %} {% block main %}
 
 {{ postings.create_post(current_user) }}
 <div class="posts-wrapper">
-	{% for post in posts %} {{ postings.post(post, current_user) }} {% endfor %}
+	{% for post in posts %} {{ postings.post(post, current_user, group=post.group) }} {% endfor %}
 </div>
 
 <!-- Pagination -->
