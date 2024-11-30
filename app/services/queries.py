@@ -2,6 +2,7 @@ from sqlalchemy import and_, case, func, or_, select
 
 from app.models import (
     Group,
+    GroupType,
     Message,
     Post,
     User,
@@ -26,21 +27,6 @@ def get_friends(
     )
 
     return db.paginate(query, page=page, per_page=per_page)
-
-
-# TODO: Include for you (boolean), posts from groups, include current user's post / reposts
-def get_feed_posts(user_id):
-    friends_posts = (
-        db.session.execute(
-            select(Post)
-            .join(friends_table, friends_table.c.friend_id == Post.user_id)
-            .filter(friends_table.c.user_id == user_id)
-        )
-        .scalars()
-        .all()
-    )
-
-    return friends_posts
 
 
 # Friend requests for user
@@ -182,46 +168,93 @@ def get_user_posts(page=1, per_page=10, user_id=None):
     return db.paginate(query, page=page, per_page=per_page)
 
 
-# TODO: Add group posts
 def get_community_posts(
     page=1, per_page=10, user_id=None, friends=None, tag_pattern=None
 ):
     query = select(Post).join(Post.user)
 
-    user_filters = or_(
-        Post.user_id == user_id,
-        Post.user_id.in_([friend.id for friend in friends]),
-        User.is_private == False,
+    user_groups = select(Group.id).where(
+        or_(
+            Group.owner_id == user_id,
+            Group.id.in_(
+                select(group_admins.c.group_id).where(group_admins.c.user_id == user_id)
+            ),
+            Group.id.in_(
+                select(group_members.c.group_id).where(
+                    group_members.c.user_id == user_id
+                )
+            ),
+        )
     )
 
+    group_filters = or_(
+        Post.group_id.in_(user_groups),
+        and_(
+            Post.group_id.in_(
+                select(Group.id).where(Group.group_type == GroupType.PUBLIC)
+            ),
+            or_(
+                Post.user_id == user_id,
+                Post.user_id.in_([friend.id for friend in friends]),
+                User.is_private == False,
+            ),
+        ),
+    )
+
+    user_filters = and_(
+        Post.group_id.is_(None),
+        or_(
+            Post.user_id == user_id,
+            Post.user_id.in_([friend.id for friend in friends]),
+            User.is_private == False,
+        ),
+    )
+
+    all_filters = or_(group_filters, user_filters)
+
     if tag_pattern:
-        query = query.filter(and_(user_filters, Post.content.ilike(tag_pattern)))
+        query = query.filter(and_(all_filters, Post.content.ilike(tag_pattern)))
     else:
-        query = query.filter(user_filters)
+        query = query.filter(all_filters)
 
     query = query.order_by(Post.created_at.desc())
 
     return db.paginate(query, page=page, per_page=per_page)
 
 
-# TODO: Add group posts
 def get_posts(
     page=1,
     per_page=10,
     user_id=None,
     friends=None,
 ):
-    query = (
-        select(Post)
-        .join(Post.user)
-        .filter(
+    query = select(Post).join(Post.user)
+
+    user_groups = select(Group.id).where(
+        or_(
+            Group.owner_id == user_id,
+            Group.id.in_(
+                select(group_admins.c.group_id).where(group_admins.c.user_id == user_id)
+            ),
+            Group.id.in_(
+                select(group_members.c.group_id).where(
+                    group_members.c.user_id == user_id
+                )
+            ),
+        )
+    )
+
+    filters = or_(
+        and_(
             or_(
                 Post.user_id == user_id,
                 Post.user_id.in_([friend.id for friend in friends]),
             )
-        )
-        .order_by(Post.created_at.desc())
+        ),
+        Post.group_id.in_(user_groups),
     )
+
+    query = query.where(filters).order_by(Post.created_at.desc())
 
     return db.paginate(query, page=page, per_page=per_page)
 
