@@ -133,7 +133,7 @@
         <div class="d-flex align-items-center mb-3">
           <a href="/profiles/{{ post.original_post.user.username }}">
             <img
-              src="{{ post.original_post.user.image if post.original_post.user.image else url_for('static', filename='placeholder.jpg') }}"
+              src="{{ post.original_post.user.image|s3_url}}"
               alt="{{ post.original_post.user.username }}"
               class="avatar sm margin-t-2"
             />

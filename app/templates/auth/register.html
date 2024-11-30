@@ -2,7 +2,7 @@
 main %}
 
 <form action="{{ url_for('auth.register') }}" method="post" class="auth-form">
-  <h1 class="fs-4 text-center">Register to Network50!</h1>
+  <h1 class="fs-4 text-center">Register to Social50!</h1>
   <input
     autocomplete="off"
     autofocus
@@ -146,24 +146,34 @@ main %}
               or harm its users.
             </p>
           </li>
-					
+
           <li class="list-group-item border-0 p-0">
             <strong>Data Storage and Collection</strong>
-            <ul>
-              <li>
-                The app stores user-generated content, including images and
-                media, on Amazon Web Services (AWS) infrastructure
-              </li>
-              <li>
-                By uploading content, you grant us permission to store and
+            <div>
+              <p>
+                • Social50 stores user-generated images on Amazon Web Services
+                (AWS) infrastructure
+              </p>
+              <p>
+                • By uploading content, you grant permission to store and
                 process this content on AWS services
-              </li>
-              <li>The app may collect limited data to improve functionality</li>
-              <li>
-                Your content remains your property and will not be shared with
+              </p>
+              <p>
+                • Social50 may collect limited data to improve functionality
+              </p>
+              <p>
+                • Your content remains your property and will not be shared with
                 third parties without your consent
-              </li>
-            </ul>
+              </p>
+            </div>
+          </li>
+          <li class="list-group-item border-0 p-0">
+            <strong>Open Source</strong>
+            <p>
+              This project is open source and available on GitHub. Users can
+              review the implementation details, including data handling and
+              security measures, through the public repository.
+            </p>
           </li>
           <li class="list-group-item border-0 p-0">
             <strong>Changes to the Terms</strong>
