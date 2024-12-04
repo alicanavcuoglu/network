@@ -17,6 +17,7 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy.sql import func
 
 from app.extensions import db
+from app.utils.helpers import get_presigned_url
 from app.utils.time_utils import format_message_time, format_time_ago
 
 # Association table for friends
@@ -113,9 +114,28 @@ class User(db.Model):
         back_populates="user", cascade="all, delete"
     )
 
+    sent_messages: Mapped[List["Message"]] = relationship(
+        foreign_keys="[Message.sender_id]",
+        back_populates="sender",
+        lazy=True,
+        cascade="all, delete",
+        passive_deletes=True,
+    )
+
+    received_messages: Mapped[List["Message"]] = relationship(
+        foreign_keys="[Message.recipient_id]",
+        back_populates="recipient",
+        lazy=True,
+        cascade="all, delete",
+        passive_deletes=True,
+    )
+
     # One-to-Many relationship for user's groups
     owned_groups: Mapped[List["Group"]] = relationship(
-        back_populates="owner", lazy=True, cascade="all, delete"
+        back_populates="owner",
+        lazy=True,
+        cascade="all, delete",
+        passive_deletes=True,
     )
 
     # Many-to-Many relationship for group's admins
@@ -130,12 +150,32 @@ class User(db.Model):
 
     # Sent invitations
     sent_invitations: Mapped[List["Invitation"]] = relationship(
-        foreign_keys="[Invitation.inviter_id]", back_populates="inviter"
+        foreign_keys="[Invitation.inviter_id]",
+        back_populates="inviter",
+        cascade="all, delete-orphan",
+        passive_deletes=True,
     )
 
     # Received invitations
     received_invitations: Mapped[List["Invitation"]] = relationship(
-        foreign_keys="[Invitation.invitee_id]", back_populates="invitee"
+        foreign_keys="[Invitation.invitee_id]",
+        back_populates="invitee",
+        cascade="all, delete-orphan",
+        passive_deletes=True,
+    )
+
+    received_notifications: Mapped[List["Notification"]] = relationship(
+        foreign_keys="[Notification.recipient_id]",
+        back_populates="recipient",
+        cascade="all, delete-orphan",
+        passive_deletes=True,
+    )
+
+    sent_notifications: Mapped[List["Notification"]] = relationship(
+        foreign_keys="[Notification.sender_id]",
+        back_populates="sender",
+        cascade="all, delete-orphan",
+        passive_deletes=True,
     )
 
     def __repr__(self) -> str:
@@ -272,8 +312,12 @@ class Like(db.Model):
 # Message model
 class Message(db.Model):
     id: Mapped[int] = mapped_column(primary_key=True)
-    sender_id: Mapped[int] = mapped_column(ForeignKey("user.id"), nullable=False)
-    recipient_id: Mapped[int] = mapped_column(ForeignKey("user.id"), nullable=False)
+    sender_id: Mapped[int] = mapped_column(
+        ForeignKey("user.id", ondelete="CASCADE"), nullable=False
+    )
+    recipient_id: Mapped[int] = mapped_column(
+        ForeignKey("user.id", ondelete="CASCADE"), nullable=False
+    )
     content: Mapped[str] = mapped_column(Text, nullable=False)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), default=func.now()
@@ -281,10 +325,10 @@ class Message(db.Model):
     is_read: Mapped[bool] = mapped_column(Boolean, default=False)
 
     sender: Mapped["User"] = relationship(
-        foreign_keys=[sender_id], backref="sent_messages"
+        foreign_keys=[sender_id], back_populates="sent_messages"
     )
     recipient: Mapped["User"] = relationship(
-        foreign_keys=[recipient_id], backref="received_messages"
+        foreign_keys=[recipient_id], back_populates="received_messages"
     )
 
     def __repr__(self):
@@ -296,7 +340,7 @@ class Message(db.Model):
             "content": self.content,
             "sender_id": self.sender_id,
             "sender": {
-                "image": self.sender.image,
+                "image": get_presigned_url(self.sender.image),
                 "name": self.sender.name,
                 "surname": self.sender.surname,
             },
@@ -321,8 +365,12 @@ class NotificationEnum(enum.Enum):
 
 class Notification(db.Model):
     id: Mapped[int] = mapped_column(primary_key=True)
-    recipient_id: Mapped[int] = mapped_column(ForeignKey("user.id"), nullable=False)
-    sender_id: Mapped[int] = mapped_column(ForeignKey("user.id"), nullable=False)
+    recipient_id: Mapped[int] = mapped_column(
+        ForeignKey("user.id", ondelete="CASCADE"), nullable=False
+    )
+    sender_id: Mapped[int] = mapped_column(
+        ForeignKey("user.id", ondelete="CASCADE"), nullable=False
+    )
     notification_type: Mapped[NotificationEnum] = mapped_column(
         # Modified with ChatGPT because I was getting Enum keys instead of Enum values
         Enum(NotificationEnum, values_callable=lambda obj: [e.value for e in obj]),
@@ -346,9 +394,17 @@ class Notification(db.Model):
 
     # Relationships
     recipient: Mapped["User"] = relationship(
-        foreign_keys=[recipient_id], backref="received_notifications"
+        foreign_keys=[recipient_id],
+        back_populates="received_notifications",
+        passive_deletes=True,
     )
-    sender: Mapped["User"] = relationship(foreign_keys=[sender_id])
+
+    sender: Mapped["User"] = relationship(
+        foreign_keys=[sender_id],
+        back_populates="sent_notifications",
+        passive_deletes=True,
+    )
+
     post: Mapped[Optional["Post"]] = relationship()
     comment: Mapped[Optional["Comment"]] = relationship()
     group: Mapped[Optional["Group"]] = relationship()
@@ -363,14 +419,14 @@ class Notification(db.Model):
             "type": self.notification_type.value,
             "sender_name": f"{self.sender.name} {self.sender.surname}",
             "sender_username": self.sender.username,
-            "sender_image": self.sender.image,
+            "sender_image": get_presigned_url(self.sender.image),
             "created_at": format_time_ago(self.created_at),
             "created_at_iso": self.created_at.isoformat(),
             "is_read": self.is_read,
             "post_id": self.post_id,
             "comment_id": self.comment_id,
             "group_id": self.group_id,
-            "group_name": self.group.name,
+            "group_name": self.group.name if self.group else None,
         }
 
 

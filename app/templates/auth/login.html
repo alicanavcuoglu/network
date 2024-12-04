@@ -1,29 +1,32 @@
 {% extends "layout.html" %} {% block title %} Log In {% endblock %} {% block
 main %}
 <form action="{{ url_for('auth.login') }}" method="post" class="auth-form">
-	<h1 class="fs-4 text-center">Register to Social50!</h1>
-	<input
-		autocomplete="off"
-		autofocus
-		class="form-control"
-		name="username"
-		placeholder="Username"
-		type="text"
-		required />
-	<input
-		class="form-control"
-		name="password"
-		placeholder="Password"
-		type="password"
-		required />
-	<button class="btn btn-primary" type="submit">Log In</button>
+  <h1 class="fs-4 text-center">Welcome back to Social50!</h1>
+  <input
+    autocomplete="off"
+    autofocus
+    class="form-control"
+    name="username"
+    placeholder="Username"
+    type="text"
+    required
+  />
+  <input
+    class="form-control"
+    name="password"
+    placeholder="Password"
+    type="password"
+    required
+    Ø
+  />
+  <button class="btn btn-primary" type="submit">Log In</button>
 
-	<p class="text-center">
-		Don't have an account?<br /><a
-			href="{{ url_for('auth.register') }}"
-			class="text-primary"
-			>Register here</a
-		>
-	</p>
+  <p class="text-center">
+    Don't have an account?<br /><a
+      href="{{ url_for('auth.register') }}"
+      class="text-primary"
+      >Register here</a
+    >
+  </p>
 </form>
 {% endblock %}

@@ -49,7 +49,7 @@
       <header>
         {% for category, message in messages %}
         <div
-          class="alert alert-{{ 'danger' if category == 'error' else 'info' if category == 'info' else 'primary' }}  text-center"
+          class="alert alert-{{ 'danger' if category == 'error' else 'info' if category == 'info' else 'primary' }} text-center m-0 rounded-0"
           role="alert"
         >
           {{ message }}
@@ -59,7 +59,7 @@
       {% endif %} {% endwith %} {% if current_user and not
       current_user.is_completed %}
       <header>
-        <div class="alert alert-warning text-center" role="alert">
+        <div class="alert alert-warning text-center m-0 rounded-0" role="alert">
           Please complete your profile.
           <a href="/register/complete">Click to complete!</a>
         </div>
