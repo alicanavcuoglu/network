@@ -575,17 +575,29 @@ class Group(db.Model):
 
 class Invitation(db.Model):
     id: Mapped[int] = mapped_column(primary_key=True)
-    group_id: Mapped[int] = mapped_column(ForeignKey("group.id"), nullable=False)
-    inviter_id: Mapped[int] = mapped_column(ForeignKey("user.id"), nullable=False)
-    invitee_id: Mapped[int] = mapped_column(ForeignKey("user.id"), nullable=False)
+    group_id: Mapped[int] = mapped_column(
+        ForeignKey("group.id", ondelete="CASCADE"), nullable=False
+    )
+    inviter_id: Mapped[int] = mapped_column(
+        ForeignKey("user.id", ondelete="CASCADE"), nullable=False
+    )
+    invitee_id: Mapped[int] = mapped_column(
+        ForeignKey("user.id", ondelete="CASCADE"), nullable=False
+    )
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), default=func.now()
     )
 
-    group: Mapped["Group"] = relationship(back_populates="invitations")
+    group: Mapped["Group"] = relationship(
+        back_populates="invitations", passive_deletes=True
+    )
     inviter: Mapped["User"] = relationship(
-        foreign_keys=[inviter_id], back_populates="sent_invitations"
+        foreign_keys=[inviter_id],
+        back_populates="sent_invitations",
+        passive_deletes=True,
     )
     invitee: Mapped["User"] = relationship(
-        foreign_keys=[invitee_id], back_populates="received_invitations"
+        foreign_keys=[invitee_id],
+        back_populates="received_invitations",
+        passive_deletes=True,
     )
