@@ -176,7 +176,9 @@ def user_delete(id):
     db.session.delete(user)
     db.session.commit()
     session.clear()
-    return redirect(url_for("main.feed"))
+    
+    flash('Your account has been successfully deleted.', 'success')
+    return redirect(url_for("auth.login"))
 
 
 @main_bp.route("/settings/general", methods=["POST"])

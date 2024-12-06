@@ -24,39 +24,39 @@ from app.utils.time_utils import format_message_time, format_time_ago
 friends_table = Table(
     "friends",
     db.Model.metadata,
-    Column("user_id", Integer, ForeignKey("user.id")),
-    Column("friend_id", Integer, ForeignKey("user.id")),
+    Column("user_id", Integer, ForeignKey("user.id", ondelete="CASCADE")),
+    Column("friend_id", Integer, ForeignKey("user.id", ondelete="CASCADE")),
 )
 
 # Association table for pending friend requests
 pending_requests_table = Table(
     "pending_requests",
     db.Model.metadata,
-    Column("user_id", Integer, ForeignKey("user.id")),
-    Column("pending_id", Integer, ForeignKey("user.id")),
+    Column("user_id", Integer, ForeignKey("user.id", ondelete="CASCADE")),
+    Column("pending_id", Integer, ForeignKey("user.id", ondelete="CASCADE")),
 )
 
 # Association table for received friend requests
 received_requests_table = Table(
     "received_requests",
     db.Model.metadata,
-    Column("user_id", Integer, ForeignKey("user.id")),
-    Column("request_id", Integer, ForeignKey("user.id")),
+    Column("user_id", Integer, ForeignKey("user.id", ondelete="CASCADE")),
+    Column("request_id", Integer, ForeignKey("user.id", ondelete="CASCADE")),
 )
 
 # Association table for group members
 group_members = Table(
     "members",
     db.Model.metadata,
-    Column("user_id", Integer, ForeignKey("user.id")),
-    Column("group_id", Integer, ForeignKey("group.id")),
+    Column("user_id", Integer, ForeignKey("user.id", ondelete="CASCADE")),
+    Column("group_id", Integer, ForeignKey("group.id", ondelete="CASCADE")),
 )
 
 group_admins = Table(
     "admins",
     db.Model.metadata,
-    Column("user_id", Integer, ForeignKey("user.id")),
-    Column("group_id", Integer, ForeignKey("group.id")),
+    Column("user_id", Integer, ForeignKey("user.id", ondelete="CASCADE")),
+    Column("group_id", Integer, ForeignKey("group.id", ondelete="CASCADE")),
 )
 
 
@@ -86,6 +86,8 @@ class User(db.Model):
         primaryjoin=id == friends_table.c.user_id,
         secondaryjoin=id == friends_table.c.friend_id,
         backref="friends_with",
+        cascade="all, delete",
+        passive_deletes=True,
     )
 
     # Many-to-Many relationship for pending friend requests
@@ -95,6 +97,8 @@ class User(db.Model):
         primaryjoin=id == pending_requests_table.c.user_id,
         secondaryjoin=id == pending_requests_table.c.pending_id,
         backref="pending_from",
+        cascade="all, delete",
+        passive_deletes=True,
     )
 
     # Many-to-Many relationship for received friend requests
@@ -104,6 +108,8 @@ class User(db.Model):
         primaryjoin=id == received_requests_table.c.user_id,
         secondaryjoin=id == received_requests_table.c.request_id,
         backref="received_from",
+        cascade="all, delete",
+        passive_deletes=True,
     )
 
     posts: Mapped[List["Post"]] = relationship(
@@ -194,13 +200,17 @@ class User(db.Model):
 # Post model
 class Post(db.Model):
     id: Mapped[int] = mapped_column(primary_key=True)
-    user_id: Mapped[int] = mapped_column(ForeignKey("user.id"), nullable=False)
+    user_id: Mapped[int] = mapped_column(
+        ForeignKey("user.id", ondelete="CASCADE"), nullable=False
+    )
     # Reshare
     parent_id: Mapped[int] = mapped_column(
         ForeignKey("post.id", ondelete="SET NULL"), nullable=True
     )
     # Group post
-    group_id: Mapped[int] = mapped_column(ForeignKey("group.id"), nullable=True)
+    group_id: Mapped[int] = mapped_column(
+        ForeignKey("group.id", ondelete="CASCADE"), nullable=True
+    )
 
     content: Mapped[str] = mapped_column(Text, nullable=False)
     shares: Mapped[int] = mapped_column(Integer, default=0)
@@ -210,12 +220,14 @@ class Post(db.Model):
         primaryjoin="and_(Like.post_id == Post.id, Like.post_id.isnot(None))",
         back_populates="post",
         cascade="all, delete-orphan",
+        passive_deletes=True,
     )
 
     # Comments
     comments: Mapped[List["Comment"]] = relationship(
         back_populates="post",
         cascade="all, delete-orphan",
+        passive_deletes=True,
         order_by="desc(Comment.created_at)",
     )
 
@@ -226,11 +238,11 @@ class Post(db.Model):
         DateTime(timezone=True), default=func.now(), onupdate=func.now()
     )
 
-    user: Mapped["User"] = relationship("User", back_populates="posts")
+    user: Mapped["User"] = relationship(back_populates="posts", passive_deletes=True)
     original_post: Mapped["Post"] = relationship("Post", remote_side=[id])
 
     # Group relation
-    group: Mapped["Group"] = relationship("Group", back_populates="posts")
+    group: Mapped["Group"] = relationship(back_populates="posts", passive_deletes=True)
 
     def __repr__(self) -> str:
         return f"<Post {self.id} by User {self.user_id}>"
@@ -251,8 +263,12 @@ class Post(db.Model):
 # Comment model
 class Comment(db.Model):
     id: Mapped[int] = mapped_column(primary_key=True)
-    user_id: Mapped[int] = mapped_column(ForeignKey("user.id"), nullable=False)
-    post_id: Mapped[int] = mapped_column(ForeignKey("post.id"), nullable=False)
+    user_id: Mapped[int] = mapped_column(
+        ForeignKey("user.id", ondelete="CASCADE"), nullable=False
+    )
+    post_id: Mapped[int] = mapped_column(
+        ForeignKey("post.id", ondelete="CASCADE"), nullable=False
+    )
 
     content: Mapped[str] = mapped_column(Text, nullable=False)
     created_at: Mapped[datetime] = mapped_column(
@@ -260,12 +276,13 @@ class Comment(db.Model):
     )
 
     post: Mapped["Post"] = relationship(back_populates="comments")
-    user: Mapped["User"] = relationship()
+    user: Mapped["User"] = relationship(passive_deletes=True)
 
     likes: Mapped[List["Like"]] = relationship(
         primaryjoin="and_(Like.comment_id == Comment.id, Like.comment_id.isnot(None))",
         back_populates="comment",
         cascade="all, delete-orphan",
+        passive_deletes=True,
     )
 
     def __repr__(self) -> str:
@@ -281,9 +298,15 @@ class Comment(db.Model):
 # Like model
 class Like(db.Model):
     id: Mapped[int] = mapped_column(primary_key=True)
-    user_id: Mapped[int] = mapped_column(ForeignKey("user.id"), nullable=False)
-    post_id: Mapped[int] = mapped_column(ForeignKey("post.id"), nullable=True)
-    comment_id: Mapped[int] = mapped_column(ForeignKey("comment.id"), nullable=True)
+    user_id: Mapped[int] = mapped_column(
+        ForeignKey("user.id", ondelete="CASCADE"), nullable=False
+    )
+    post_id: Mapped[int] = mapped_column(
+        ForeignKey("post.id", ondelete="CASCADE"), nullable=True
+    )
+    comment_id: Mapped[int] = mapped_column(
+        ForeignKey("comment.id", ondelete="CASCADE"), nullable=True
+    )
 
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), default=func.now()
@@ -298,12 +321,13 @@ class Like(db.Model):
     )
 
     # Relationship to post and comment
-    post: Mapped["Post"] = relationship(back_populates="likes", foreign_keys=[post_id])
-    comment: Mapped["Comment"] = relationship(
-        back_populates="likes", foreign_keys=[comment_id]
+    post: Mapped["Post"] = relationship(
+        back_populates="likes", foreign_keys=[post_id], passive_deletes=True
     )
-
-    user: Mapped["User"] = relationship(back_populates="likes")
+    comment: Mapped["Comment"] = relationship(
+        back_populates="likes", foreign_keys=[comment_id], passive_deletes=True
+    )
+    user: Mapped["User"] = relationship(back_populates="likes", passive_deletes=True)
 
     def __repr__(self) -> str:
         return f"<Like {self.id} by User {self.user_id}>"
@@ -443,7 +467,9 @@ class GroupRole(enum.Enum):
 
 class Group(db.Model):
     id: Mapped[int] = mapped_column(primary_key=True)
-    owner_id: Mapped[int] = mapped_column(ForeignKey("user.id"), nullable=False)
+    owner_id: Mapped[int] = mapped_column(
+        ForeignKey("user.id", ondelete="CASCADE"), nullable=False
+    )
     image: Mapped[str] = mapped_column(String(300), nullable=True)
     name: Mapped[str] = mapped_column(Text, nullable=False)
     about: Mapped[str] = mapped_column(Text, nullable=False)
@@ -456,7 +482,9 @@ class Group(db.Model):
         nullable=False,
     )
 
-    owner: Mapped["User"] = relationship(back_populates="owned_groups")
+    owner: Mapped["User"] = relationship(
+        back_populates="owned_groups", passive_deletes=True
+    )
 
     # Many-to-Many relationship for admins
     admins: Mapped[List["User"]] = relationship(
@@ -465,6 +493,7 @@ class Group(db.Model):
         secondaryjoin="User.id == admins.c.user_id",
         back_populates="admin_in",
         lazy="dynamic",
+        passive_deletes=True,
     )
 
     # Many-to-Many relationship for members
@@ -474,10 +503,14 @@ class Group(db.Model):
         secondaryjoin="User.id == members.c.user_id",
         back_populates="member_in",
         lazy="dynamic",
+        passive_deletes=True,
     )
 
     invitations: Mapped[List["Invitation"]] = relationship(
-        back_populates="group", lazy=True, cascade="all, delete"
+        back_populates="group",
+        lazy=True,
+        cascade="all, delete",
+        passive_deletes=True,
     )
 
     # Posts relationship
@@ -485,6 +518,7 @@ class Group(db.Model):
         back_populates="group",
         lazy="dynamic",
         cascade="all, delete",
+        passive_deletes=True,
         order_by="desc(Post.created_at)",
     )
 

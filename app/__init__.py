@@ -1,12 +1,20 @@
+import os
 from flask import Flask
 
-from app.config import Config
+from app.config import Config, ProductionConfig
 from app.extensions import db, mail, migrate, socketio
 
 
 def create_app():
     app = Flask(__name__)
-    app.config.from_object(Config)
+
+    environment = os.getenv("FLASK_ENV", "production").lower()
+    if environment == "development":
+        app.debug = True
+        app.config.from_object(Config)
+    else:
+        app.debug = False
+        app.config.from_object(ProductionConfig)
 
     db.init_app(app)
     migrate.init_app(app, db)
